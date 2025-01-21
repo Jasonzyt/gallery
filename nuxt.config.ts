@@ -4,10 +4,13 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   srcDir: "src/",
   css: ["~/assets/css/base.css"],
-  modules: ["@nuxt/ui", "@nuxt/icon"],
+  modules: ["@nuxt/ui", "@nuxt/icon", "@nuxt/image"],
   icon: {
     customCollections: [
-      { prefix: "my", dir: "assets/icon/my" },
+      {
+        prefix: "my",
+        dir: "assets/icon/my",
+      },
       {
         prefix: "album-icons",
         dir: "assets/icon/album-icons",
