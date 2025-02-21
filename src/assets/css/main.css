@@ -13,10 +13,6 @@ a {
   text-decoration: none;
 }
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 @layer base {
   h1 {
     @apply text-2xl;
@@ -44,8 +40,8 @@ a {
   }
 }
 
-body {
-  min-height: 100vh;
-  font-family: Rubik, "Noto Sans SC", "Noto Sans JP", -apple-system,
-    BlinkMacSystemFont, Ubuntu, "Helvetica Neue", sans-serif;
+@theme {
+  --font-sans: "Noto Sans SC", "Noto Sans JP", "sans-serif";
+  --font-serif: "Noto Serif", "Noto Serif SC", "Noto Serif JP", "serif";
+  --font-mono: "JetBrains Mono", "Ubuntu Mono", "Consolas", "monospace";
 }

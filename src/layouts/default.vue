@@ -1,7 +1,6 @@
 <template>
-  <div>
-    <slot />
-  </div>
+  <Nav />
+  <slot />
 </template>
 
 <script lang="ts" setup>
