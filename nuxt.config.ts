@@ -7,6 +7,11 @@ export default defineNuxtConfig({
   srcDir: "src/",
   css: ["~/assets/css/main.css"],
   modules: ["@nuxt/ui", "@nuxt/icon", "@nuxt/image"],
+  ui: {
+    theme: {
+      colors: ["primary", "neutral"],
+    },
+  },
   icon: {
     // customCollections: [
     //   {
