@@ -13,12 +13,12 @@ export default defineNuxtConfig({
     },
   },
   icon: {
-    // customCollections: [
-    //   {
-    //     prefix: "my",
-    //     dir: "assets/icon/my",
-    //   },
-    // ],
+    customCollections: [
+      {
+        prefix: "my",
+        dir: "src/assets/icon/my",
+      },
+    ],
   },
   vite: {
     plugins: [tailwindcss()],
