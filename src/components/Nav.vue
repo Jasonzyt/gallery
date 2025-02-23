@@ -1,8 +1,8 @@
 <template>
-  <div class="w-fit h-full px-2 border-r-2 border-gray-200">
-    <h2 class="w-48 px-6 pt-4 pb-2.5">Gallery</h2>
+  <div class="w-48 min-h-full px-2 border-r-2 border-gray-200">
+    <h2 class="px-4 pt-4 pb-2.5">Gallery</h2>
     <UNavigationMenu :items="links" orientation="vertical"
-      :ui="{ root: 'w-48 h-full', item: 'text-xl', link: 'py-2.5 px-4 mx-2', linkLeadingIcon: 'text-xl' }">
+      :ui="{ root: 'size-full', item: 'text-xl', link: 'py-2.5 px-4', linkLeadingIcon: 'text-xl' }">
     </UNavigationMenu>
   </div>
 </template>
@@ -35,7 +35,7 @@ const links = ref([
     },
     {
       label: "Blog",
-      icon: 'i-my-campu-logo',
+      icon: 'i-my-campu-icon',
       to: "https://jasonz.yt",
       target: "_blank"
     }
