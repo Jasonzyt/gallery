@@ -22,3 +22,7 @@ logs
 .env
 .env.*
 !.env.example
+
+# Images
+/src/public/assets/albums
+/import-albums
