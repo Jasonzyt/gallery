@@ -9,8 +9,7 @@ METADATA_FILE = CWD / "src/utils/meta.json"
 IMPORT_DIR = CWD / "src/public/assets/import-albums"
 ALBUMS_DIR = CWD / "src/public/assets/albums"
 
-with open(METADATA_FILE, "r", encoding="utf-8") as f:
-    METADATA = json.load(f)
+METADATA = {"albums": []}
 
 SIZES = {
     "sm": {"max_width": 800, "quality": 80},
@@ -18,6 +17,25 @@ SIZES = {
     "lg": {"max_width": 4000, "quality": 80},
     "xl": {"max_width": 6000, "quality": 80},
 }
+
+
+def check_dirs():
+    if not IMPORT_DIR.exists():
+        print(f"Directory {IMPORT_DIR} does not exist. Do you want to create it?")
+        input("Press Enter to continue...")
+        IMPORT_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def load_metadata():
+    if METADATA_FILE.exists():
+        with open(METADATA_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    else:
+        print(
+            f"Metadata file {METADATA_FILE} does not exist. Creating new metadata file."
+        )
+        write_metadata()
+    return METADATA
 
 
 def write_metadata():
@@ -69,6 +87,9 @@ def import_album(dir_path):
     album_path = ALBUMS_DIR / album_name
     album_path.mkdir(parents=True, exist_ok=True)
 
+    if ALBUMS_DIR.exists():
+        ALBUMS_DIR.mkdir(parents=True, exist_ok=True)
+
     for img_file in Path(dir_path).iterdir():
         if img_file.is_file():
             try:
@@ -96,14 +117,23 @@ def import_album(dir_path):
     print(f"Imported {count} photos")
 
 
-count = 0
-with os.scandir(IMPORT_DIR) as entries:
-    for entry in entries:
-        if entry.is_dir():
-            album_path = IMPORT_DIR / entry.name
-            import_album(album_path)
-            if not any(album_path.iterdir()):
-                print(f"Album directory {album_path} is empty, deleting it.")
-                shutil.rmtree(album_path)
-            write_metadata()
-            count += 1
+def main():
+    global METADATA
+    count = 0
+    check_dirs()
+    METADATA = load_metadata()
+    with os.scandir(IMPORT_DIR) as entries:
+        for entry in entries:
+            if entry.is_dir():
+                album_path = IMPORT_DIR / entry.name
+                import_album(album_path)
+                if not any(album_path.iterdir()):
+                    print(f"Album directory {album_path} is empty, deleting it.")
+                    shutil.rmtree(album_path)
+                write_metadata()
+                count += 1
+        print(f"Imported {count} albums")
+
+
+if __name__ == "__main__":
+    main()
