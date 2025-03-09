@@ -32,7 +32,7 @@ def load_metadata():
             return json.load(f)
     else:
         print(
-            f"Metadata file {METADATA_FILE} does not exist. Creating new metadata file."
+            f"[METADATA] Metadata file {METADATA_FILE} does not exist. Creating new metadata file."
         )
         write_metadata()
     return METADATA
@@ -50,7 +50,7 @@ def create_new_album(name, photos):
             "name": name,
             "desc": "",
             "cover": None,
-            "urlFormat": f"/assets/albums/{name}/{{photo}}-{{size}}.webp",
+            "urlFormat": f"/assets/albums/{name}/{{photo}}-{{size}}.jpg",
             "photos": photos,
         }
     )
@@ -58,25 +58,33 @@ def create_new_album(name, photos):
 
 def process_image(img_path, id, album_name):
     img = Image.open(img_path)
+    exif = img.info.get("exif")
     for size, config in SIZES.items():
         max_width, quality = config["max_width"], config["quality"]
-        filename = ALBUMS_DIR / album_name / f"{id}-{size}.webp"
+        filename = ALBUMS_DIR / album_name / f"{id}-{size}.jpg"
         if filename.exists():
-            print(f"Overwriting {filename} as it already exists")
+            print(f"- Overwriting {filename} as it already exists")
             filename.unlink()
         img_resized = img.copy()
         img_resized.thumbnail((max_width, max_width))
-        img_resized.save(filename, format="WEBP", quality=quality)
+        img_resized.save(
+            filename, format="JPEG", quality=quality, exif=exif, optimize=True
+        )
 
     # Square crop
-    filename = ALBUMS_DIR / album_name / f"{id}-sq.webp"
+    filename = ALBUMS_DIR / album_name / f"{id}-sq.jpg"
     if filename.exists():
-        print(f"Overwriting {filename} as it already exists")
+        print(f"- Overwriting {filename} as it already exists")
         filename.unlink()
     img_square = img.copy()
-    img_square = img_square.crop((0, 0, 400, 400))  # Simple center crop
-    img_square.save(filename, format="WEBP", quality=80)
+    w, h = img_square.size
+    if w > h:
+        img_square = img.crop(((w - h) / 2, 0, (w + h) / 2, h)).resize((640, 640))
+    else:
+        img_square = img.crop((0, (h - w) / 2, w, (h + w) / 2)).resize((640, 640))
+    img_square.save(filename, format="JPEG", quality=80, exif=exif, optimize=True)
     img.close()
+    print(f"- {img_path.name} processed")
 
 
 def import_album(dir_path):
@@ -99,18 +107,18 @@ def import_album(dir_path):
                 count += 1
                 img_file.unlink()  # Remove original file after processing
             except Exception as e:
-                print(f"Error when processing image {img_file.name}: {e}")
+                print(f"! Error when processing image {img_file.name}: {e}")
 
     album_exists = next((a for a in METADATA["albums"] if a["id"] == album_name), None)
     if album_exists:
-        print("Album already exists, appending photos")
+        print("[METADATA] Album already exists, appending photos")
         album_exists["photos"].extend(
             p for p in photos if p not in album_exists["photos"]
         )
     else:
         create_new_album(album_name, photos)
         print(
-            f"Created new album {album_name}. Please add a cover photo and description in meta.json"
+            f"[METADATA] Created new album {album_name}. Please add a cover photo and description in meta.json"
         )
 
     write_metadata()
