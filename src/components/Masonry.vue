@@ -1,11 +1,20 @@
 <template>
-  <div class="hfall">
-    <NuxtImg v-for="img in images" :src="img" :alt="img" class="item hover:shadow-xl transition-shadow"></NuxtImg>
+  <div class="masonry">
+    <Photo v-for="img in images" :src="img" :alt="img" class="item hover:shadow-xl transition-shadow">
+    </Photo>
   </div>
 </template>
 
 <script lang="ts" setup>
 defineProps({
+  height: {
+    type: String,
+    default: "300px"
+  },
+  maxWidth: {
+    type: String,
+    default: "100%"
+  },
   images: {
     type: Array<string>
   }
@@ -14,7 +23,7 @@ defineProps({
 </script>
 
 <style scoped>
-.hfall {
+.masonry {
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
@@ -25,9 +34,7 @@ defineProps({
 .item {
   flex-grow: 1;
   object-fit: cover;
-  height: 300px;
-  max-width: 100%;
-  border-radius: 12px;
-  border: 1px rgb(var(--color-gray-500));
+  height: v-bind("height");
+  max-width: v-bind("maxWidth");
 }
 </style>
