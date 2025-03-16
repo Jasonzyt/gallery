@@ -16,7 +16,7 @@ export default defineNuxtConfig({
     customCollections: [
       {
         prefix: "my",
-        dir: "src/assets/icon/my",
+        dir: "./src/assets/icon/my",
       },
     ],
   },
