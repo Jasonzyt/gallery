@@ -1,6 +1,8 @@
 <template>
   <div class="w-[15vw] min-h-full pt-2 pb-4 pl-4 pr-2 border-r-2 border-gray-200 max-sm:hidden flex flex-col">
-    <h2 class="px-6 pt-4 pb-2.5 text-2xl">Gallery</h2>
+    <h2 class="px-4 pt-4 pb-2.5 text-[2xl]">
+      <Icon name="my:gallery" size="1.4em" class="align-text-bottom mr-2" />Gallery
+    </h2>
     <USeparator class="my-2" />
     <UNavigationMenu :items="links" orientation="vertical"
       :ui="{ root: 'size-full', link: 'py-2.5 px-[8%] text-[1.1rem]', linkLeadingIcon: 'text-xl mr-1' }">
@@ -10,7 +12,6 @@
     <UNavigationMenu :items="linksBottom" orientation="vertical"
       :ui="{ root: 'size-full', link: 'py-2.5 px-[8%] text-[1.1rem]', linkLeadingIcon: 'text-xl mr-1' }">
     </UNavigationMenu>
-    <USeparator label="GALLERY" />
   </div>
 </template>
 
@@ -42,9 +43,9 @@ const linksBottom = ref([
   },
   {
     label: "Blog",
-    icon: 'i-my-campu-icon',
+    icon: "i-my-campu-icon",
     to: "https://jasonz.yt",
-    target: "_blank"
+    target: "_blank",
   }
 ])
 
