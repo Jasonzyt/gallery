@@ -13,7 +13,7 @@ defineProps({
   },
   maxWidth: {
     type: String,
-    default: "100%"
+    default: "50%"
   },
   images: {
     type: Array<string>
