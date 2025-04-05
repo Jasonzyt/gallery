@@ -3,7 +3,7 @@
     <div v-show="show" class="fixed inset-0 z-50 bg-[rgba(0,0,0,0.8)] flex items-center justify-center select-none"
       @keydown="handleKeydown" tabindex="0" ref="viewerRef">
       <!-- 主图片容器 -->
-      <div class="relative w-full h-full flex items-center justify-center">
+      <div class="relative w-full h-full flex items-center justify-center" @click="handleClick">
 
         <!-- 主图片 -->
         <Transition name="slide" mode="out-in">
@@ -12,7 +12,7 @@
               @load="isLoading = false" />
             <!-- 底部渐变黑前景 -->
             <Transition name="fade">
-              <div v-show="showInfoTrigger"
+              <div v-show="showInfoTrigger && !showInfo"
                 class="absolute bottom-0 left-0 right-0 h-1/10 bg-gradient-to-t from-black/70 to-transparent transition-opacity duration-300">
               </div>
             </Transition>
@@ -21,7 +21,7 @@
             <Transition name="fade-scale">
               <div v-show="showInfoTrigger && !showInfo"
                 class="absolute bottom-6 left-1/2 transform -translate-x-1/2 cursor-pointer flex items-center bg-black/50 px-4 py-2 rounded-full"
-                @click="toggleInfo">
+                @click="handleInfoToggleClick" ref="infoToggleRef">
                 <Icon name="i-heroicons-information-circle" class="text-2xl text-white mr-2" />
                 <span class="text-white">Info</span>
               </div>
@@ -31,14 +31,22 @@
             <Transition name="slide-up">
               <div v-show="showInfo"
                 class="absolute bottom-0 left-1/2 transform -translate-x-1/2 bg-[rgba(0,0,0,0.6)] text-[rgba(255,255,255,0.8)] transition-all duration-300 rounded-t-xl max-w-[600px] w-full mx-auto"
-                :class="{ 'h-auto': showInfo }">
-                <UCard class="bg-transparent ring-0">
+                :class="{ 'h-auto': showInfo }" ref="infoRef">
+                <UCard class="bg-transparent ring-0 px-4 pt-4 sm:px-6 sm:pt-6 z-[100]" :ui="{ body: 'p-0 sm:p-0' }">
                   <div class="flex justify-between items-center mb-2">
-                    <div class="text-lg font-bold">Info</div>
+                    <div class="text-xl font-bold">Info</div>
                     <Icon name="i-heroicons-x-mark" class="text-xl text-white cursor-pointer" @click="toggleInfo" />
                   </div>
-                  <p>当前图片: {{ currentIndex + 1 }} / {{ totalImages }} </p>
-                  <p>更多详细信息可以在这里显示...</p>
+                  <div class="overflow-y-scroll max-h-[65vh] sm:max-h-[90vh] info-scroll-bar">
+                    <div v-for="(obj, category) in exifData" :key="category" class=" mb-2">
+                      <div class="text-md font-bold uppercase">{{ category }}</div>
+                      <div v-for="(v, k) in obj" :key="k">
+                        <div class="text-sm text-gray-300">
+                          <span class="font-bold">{{ k }}:</span> {{ v }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </UCard>
               </div>
             </Transition>
@@ -46,14 +54,14 @@
         </Transition>
 
         <!-- 左侧导航区域 - 现在整个左侧10%区域都是可点击的 -->
-        <div v-show="hasPrevious && !isLoading"
+        <div v-show="hasPrevious && !isLoading && !showInfo"
           class="absolute left-0 top-0 bottom-0 w-1/10 cursor-pointer flex items-center justify-start pl-8 opacity-0 hover:opacity-100 transition-opacity duration-300 group"
           @click="prevImage">
           <Icon name="i-heroicons-arrow-left" class="text-2xl text-white" />
         </div>
 
         <!-- 右侧导航区域 - 现在整个右侧10%区域都是可点击的 -->
-        <div v-show="hasNext && !isLoading"
+        <div v-show="hasNext && !isLoading && !showInfo"
           class="absolute right-0 top-0 bottom-0 w-1/10 cursor-pointer flex items-center justify-end pr-8 opacity-0 hover:opacity-100 transition-opacity duration-300 group"
           @click="nextImage">
           <Icon name="i-heroicons-arrow-right" class="text-2xl text-white" />
@@ -103,11 +111,13 @@ const isLoading = ref(true);
 const showInfoTrigger = ref(false); // 控制Info图标显示
 const showInfo = ref(false); // 控制信息面板显示
 const mouseY = ref(0);
-const viewerRef = useTemplateRef('viewerRef');
 const currentIndex = ref(props.initialIndex);
-const totalImages = ref(1);
 const hasPrevious = ref(false);
 const hasNext = ref(false);
+const exifData = ref({});
+const viewerRef = useTemplateRef('viewerRef');
+const infoRef = useTemplateRef('infoRef');
+const infoToggleRef = useTemplateRef('infoToggleRef');
 
 // 鼠标移动处理
 const handleMouseMove = (e: MouseEvent) => {
@@ -125,6 +135,18 @@ const handleMouseMove = (e: MouseEvent) => {
 // 切换信息面板显示
 const toggleInfo = () => {
   showInfo.value = !showInfo.value;
+};
+
+const handleInfoToggleClick = (e: MouseEvent) => {
+  e.stopPropagation();
+  showInfo.value = !showInfo.value;
+};
+
+const handleClick = (e: MouseEvent) => {
+  const rect = infoRef.value?.getBoundingClientRect();
+  if (rect && showInfo.value && !(e.clientY > rect.top && e.clientY < rect.bottom && e.clientX > rect.left && e.clientX < rect.right)) {
+    showInfo.value = false;
+  }
 };
 
 // 键盘导航
@@ -186,7 +208,7 @@ const preloadNextImage = () => {
 
 const handlePreloadComplete = () => {
   // 预加载完成，这里可以添加一些状态管理
-  console.log('Next image preloaded');
+  // console.log('Next image preloaded');
 };
 
 const refocusViewer = () => {
@@ -201,20 +223,13 @@ const closeViewer = () => {
 };
 
 // 更新导航状态
-const updateNavState = () => {
+const updateNavState = async () => {
+  exifData.value = await parseExifCategories(currentImageSrc.value);
   const prevSrc = props.previousPhoto(currentIndex.value);
-  const nextSrc = props.nextPhoto(currentIndex.value);
+  const nextSrc = props.nextPhoto(currentIndex.value)
 
   hasPrevious.value = !!prevSrc;
   hasNext.value = !!nextSrc;
-
-  // 调试输出
-  console.log("Navigation state updated:", {
-    hasPrevious: hasPrevious.value,
-    hasNext: hasNext.value,
-    prevSrc,
-    currentIndex: currentIndex.value
-  });
 };
 
 // 生命周期钩子
@@ -249,6 +264,21 @@ watch(() => show, (newVal) => {
 </script>
 
 <style scoped>
+.info-scroll-bar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.info-scroll-bar::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+}
+
+.info-scroll-bar::-webkit-scrollbar-track {
+  background-color: rgba(0, 0, 0, 0);
+  border-radius: 4px;
+}
+
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
