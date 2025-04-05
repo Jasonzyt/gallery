@@ -1,7 +1,6 @@
 <template>
   <Transition name="fade">
-    <div v-show="modelValue"
-      class="fixed inset-0 z-50 bg-[rgba(0,0,0,0.8)] flex items-center justify-center select-none"
+    <div v-show="show" class="fixed inset-0 z-50 bg-[rgba(0,0,0,0.8)] flex items-center justify-center select-none"
       @keydown="handleKeydown" tabindex="0" ref="viewerRef">
       <!-- 主图片容器 -->
       <div class="relative w-full h-full flex items-center justify-center">
@@ -11,19 +10,35 @@
           <div :key="currentImageSrc" class="flex items-center justify-center">
             <NuxtImg v-if="currentImageSrc" :src="currentImageSrc" class="max-w-full max-h-screen object-contain"
               @load="isLoading = false" />
+            <!-- 底部渐变黑前景 -->
+            <Transition name="fade">
+              <div v-show="showInfoTrigger"
+                class="absolute bottom-0 left-0 right-0 h-1/10 bg-gradient-to-t from-black/70 to-transparent transition-opacity duration-300">
+              </div>
+            </Transition>
 
-            <!-- 图片信息区域 - 现在居中显示且宽度有限制 -->
+            <!-- Info 图标 -->
+            <Transition name="fade-scale">
+              <div v-show="showInfoTrigger && !showInfo"
+                class="absolute bottom-6 left-1/2 transform -translate-x-1/2 cursor-pointer flex items-center bg-black/50 px-4 py-2 rounded-full"
+                @click="toggleInfo">
+                <Icon name="i-heroicons-information-circle" class="text-2xl text-white mr-2" />
+                <span class="text-white">Info</span>
+              </div>
+            </Transition>
+
+            <!-- 图片信息区域 - 点击后展开 -->
             <Transition name="slide-up">
               <div v-show="showInfo"
                 class="absolute bottom-0 left-1/2 transform -translate-x-1/2 bg-[rgba(0,0,0,0.6)] text-[rgba(255,255,255,0.8)] transition-all duration-300 rounded-t-xl max-w-[600px] w-full mx-auto"
-                :class="{ 'h-16': !fullInfo, 'h-32': fullInfo }">
+                :class="{ 'h-auto': showInfo }">
                 <UCard class="bg-transparent ring-0">
-                  <div class="text-lg font-bold">
-                    Info
+                  <div class="flex justify-between items-center mb-2">
+                    <div class="text-lg font-bold">Info</div>
+                    <Icon name="i-heroicons-x-mark" class="text-xl text-white cursor-pointer" @click="toggleInfo" />
                   </div>
                   <p>当前图片: {{ currentIndex + 1 }} / {{ totalImages }} </p>
-                  <p v-if="fullInfo">更多详细信息可以在这里显示...
-                  </p>
+                  <p>更多详细信息可以在这里显示...</p>
                 </UCard>
               </div>
             </Transition>
@@ -58,9 +73,6 @@
   </Transition>
 </template>
 <script setup lang="ts">
-import type { separator } from '#build/ui';
-import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue';
-
 const props = defineProps({
   nextPhoto: {
     type: Function,
@@ -80,7 +92,7 @@ const props = defineProps({
   }
 });
 
-const show = defineModel<boolean>()
+const show = defineModel<boolean>();
 
 const emit = defineEmits(['update:modelValue']);
 
@@ -88,8 +100,8 @@ const emit = defineEmits(['update:modelValue']);
 const currentImageSrc = ref(props.initialImageSrc);
 const preloadSrc = ref('');
 const isLoading = ref(true);
-const showInfo = ref(false);
-const fullInfo = ref(false);
+const showInfoTrigger = ref(false); // 控制Info图标显示
+const showInfo = ref(false); // 控制信息面板显示
 const mouseY = ref(0);
 const viewerRef = useTemplateRef('viewerRef');
 const currentIndex = ref(props.initialIndex);
@@ -107,11 +119,12 @@ const handleMouseMove = (e: MouseEvent) => {
 
   // 检查鼠标是否在底部10%的区域
   const infoTriggerZone = height * 0.9;
-  showInfo.value = mouseY.value > infoTriggerZone;
+  showInfoTrigger.value = mouseY.value > infoTriggerZone;
+};
 
-  // 检查鼠标是否接近底部边缘
-  const fullInfoTriggerZone = height * 0.95;
-  fullInfo.value = mouseY.value > fullInfoTriggerZone;
+// 切换信息面板显示
+const toggleInfo = () => {
+  showInfo.value = !showInfo.value;
 };
 
 // 键盘导航
@@ -126,6 +139,9 @@ const handleKeydown = (e: KeyboardEvent) => {
   } else if (e.key === 'Escape') {
     e.preventDefault();
     closeViewer();
+  } else if (e.key === 'i') {
+    e.preventDefault();
+    toggleInfo();
   }
 };
 
@@ -223,12 +239,13 @@ watch(() => show, (newVal) => {
     isLoading.value = true;
     currentImageSrc.value = props.initialImageSrc;
     currentIndex.value = 0;
+    showInfo.value = false;
     updateNavState();
 
     // 确保DOM更新后获取焦点
     nextTick(refocusViewer);
   }
-});
+}, { immediate: true });
 </script>
 
 <style scoped>
@@ -239,6 +256,17 @@ watch(() => show, (newVal) => {
 
 .fade-enter-from,
 .fade-leave-to {
+  opacity: 0;
+}
+
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.fade-scale-enter-from,
+.fade-scale-leave-to {
+  transform: translateY(10px) scale(0.95);
   opacity: 0;
 }
 
