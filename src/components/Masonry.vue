@@ -1,7 +1,7 @@
 <template>
   <div class="masonry">
-    <Photo v-for="img in images" :src="img" :alt="img" class="item hover:shadow-xl transition-shadow">
-    </Photo>
+    <Photo v-for="(img, index) in images" :src="img" :alt="img" class="item hover:shadow-xl transition-shadow"
+      @click="$emit('click', img, index)" />
   </div>
 </template>
 
@@ -19,6 +19,8 @@ defineProps({
     type: Array<string>
   }
 })
+
+defineEmits(["click"])
 
 </script>
 

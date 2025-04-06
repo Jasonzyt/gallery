@@ -1,6 +1,6 @@
 <template>
   <div class="shadow-md hover:shadow-xl transition-shadow rounded-xl relative" @mouseenter="isHovering = true"
-    @mouseleave="isHovering = false">
+    @mouseleave="isHovering = false" @click="$emit('click')">
     <NuxtImg :src="src" :alt="alt" ref="img" class="size-full object-cover rounded-xl z-0" />
     <p v-if="description.length !== 0"
       class="absolute w-full mt-[-3rem] py-3 px-4 rounded-b-xl text-gray-100 transition-opacity duration-300 z-10"
@@ -23,6 +23,8 @@ const props = defineProps({
     default: ""
   }
 })
+
+const emits = defineEmits(['click'])
 
 const isHovering = ref(false)
 const description = ref("")
