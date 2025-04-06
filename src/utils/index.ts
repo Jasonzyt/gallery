@@ -17,16 +17,44 @@ export function getAlbum(id: string): Album | undefined {
   return meta.albums.filter((it) => it.id === id).at(0);
 }
 
-export function getAlbumPhotoUrls(album: Album, size: string): string[] {
+export function formatUrlsWithSize(urls: string[], size: string): string[] {
+  return urls.map((it) => it.replace("{size}", size));
+}
+
+export function getAlbumPhotoUrls(
+  album: Album,
+  size: string = "{size}"
+): string[] {
   return album.photos.map((it) =>
     album.urlFormat.replace("{photo}", it).replace("{size}", size)
   );
 }
 
-export function getAllPhotoUrls(size: string): string[] {
+export function getAllPhotoUrls(size: string = "{size}"): string[] {
   const result: string[] = [];
   meta.albums.forEach((album) =>
     result.push(...getAlbumPhotoUrls(album, size))
   );
+  return result;
+}
+
+// TODO: find a better way to reverse-find the album name
+export function findAlbumsByPhotoUrl(url: string): Album[] | undefined {
+  const filename = url.replace("\\", "/").split("/").pop()?.split("?")[0];
+  if (!filename) return undefined;
+  const basename = filename.split(".").slice(0, -1).join(".");
+  return meta.albums.filter((album) => {
+    return album.photos.some((photo) => {
+      return basename.indexOf(photo) !== -1;
+    });
+  });
+}
+
+export function shuffle<T>(array: T[]): T[] {
+  const result = array.slice();
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
   return result;
 }
