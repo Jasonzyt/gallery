@@ -31,7 +31,7 @@ const description = ref("")
 
 onMounted(async () => {
   const exif = await exifr.parse(props.src)
-  console.log(exif)
+  // console.log(exif)
   description.value = exif?.ImageDescription || ""
 })
 
