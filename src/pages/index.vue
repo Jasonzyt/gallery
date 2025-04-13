@@ -1,5 +1,6 @@
 <template>
   <Masonry :images="smPhotos" height="250px" @click="handleClick" />
+  <Waterfall :images="smPhotos" @click="handleClick" />
   <ImageViewer v-model="showViewer" :next-photo="nextPhoto" :previous-photo="previousPhoto"
     :initial-image-src="lgPhotos[initialIndex]" :initial-index="initialIndex" />
 </template>

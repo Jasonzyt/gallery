@@ -1,5 +1,5 @@
 <template>
-  <div ref="masonryContainer" class="flex w-full" :style="`gap: ${gap}`">
+  <div ref="masonryContainer" class="flex w-full sm:hidden" :style="`gap: ${gap}`">
     <!-- 动态生成多栏 -->
     <div v-for="colIndex in columns" :key="colIndex" class="flex flex-col"
       :style="`width: ${100 / columns}%; gap: ${gap}`">
@@ -12,8 +12,6 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, watch, onMounted, nextTick } from 'vue';
-
 const props = defineProps({
   images: {
     type: Array<string>,
