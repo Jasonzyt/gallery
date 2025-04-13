@@ -3,7 +3,7 @@
     <div class="">
       <Nav />
     </div>
-    <div class="grow overflow-y-scroll overflow-x-hidden">
+    <div class="grow p-2 sm:p-0">
       <slot />
     </div>
   </div>
