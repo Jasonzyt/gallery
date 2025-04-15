@@ -71,6 +71,9 @@ def create_new_album(name, photos):
 def process_image(img_path, id, album_name):
     img = Image.open(img_path)
     exif = img.info.get("exif")
+    if exif is None:
+        exif = Image.Exif()
+        print("! No exif data found, leaving it as is")
     for size, config in SIZES.items():
         max_width, quality = config["max_width"], config["quality"]
         filename = ALBUMS_DIR / album_name / f"{id}-{size}.jpg"
