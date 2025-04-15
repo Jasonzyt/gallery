@@ -22,8 +22,6 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, watch, onMounted, nextTick, onUnmounted } from 'vue';
-
 const props = defineProps({
   images: {
     type: Array<string>,
