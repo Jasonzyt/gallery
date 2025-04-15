@@ -1,6 +1,7 @@
 import os
 import json
 import shutil
+import traceback
 from pathlib import Path
 from PIL import Image
 
@@ -17,6 +18,17 @@ SIZES = {
     "lg": {"max_width": 4000, "quality": 80},
     "xl": {"max_width": 6000, "quality": 80},
 }
+
+# TODO: filter EXIF
+
+
+def log_error(msg: str, e: Exception, enable_traceback: bool = True):
+    print(f"! {msg}")
+    print(f"! Error: {e}")
+    if enable_traceback:
+        tb = traceback.format_exc().splitlines()
+        for line in tb:
+            print(f"  {line}")
 
 
 def check_dirs():
@@ -107,7 +119,7 @@ def import_album(dir_path):
                 count += 1
                 img_file.unlink()  # Remove original file after processing
             except Exception as e:
-                print(f"! Error when processing image {img_file.name}: {e}")
+                log_error("Error when processing image", e)
 
     album_exists = next((a for a in METADATA["albums"] if a["id"] == album_name), None)
     if album_exists:
