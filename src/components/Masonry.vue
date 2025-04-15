@@ -1,11 +1,11 @@
 <template>
-  <div class="flex flex-wrap gap-4 py-4 px-8 max-sm:hidden">
+  <div class="w-full flex flex-wrap gap-4 py-4 px-8 max-sm:hidden">
     <Photo v-for="(img, index) in displayImages" :src="img" :alt="img" class="item hover:shadow-xl transition-shadow"
       @click="$emit('click', img, index)" />
+    <!-- 用于触发加载更多的不可见标记元素 -->
+    <div ref="loadMoreTrigger" class="w-full h-1 bottom-0 opacity-0"></div>
   </div>
 
-  <!-- 用于触发加载更多的不可见标记元素 -->
-  <div ref="loadMoreTrigger" class="w-full h-1 absolute bottom-0 opacity-0"></div>
 
   <!-- 底部结束提示 -->
   <div v-if="hasReachedEnd" class="w-full py-4 text-center text-gray-500">
@@ -52,7 +52,11 @@ const observer = ref<IntersectionObserver | null>(null);
 const displayImages = ref<string[]>([...props.images]);
 
 // 添加新图片到现有的图片集合中
-const appendImages = (newImages: string[]) => {
+const appendImages = (newImages: string[] | undefined) => {
+  if (!newImages || newImages.length === 0) {
+    hasReachedEnd.value = true;
+    return displayImages.value;
+  }
   displayImages.value = [...displayImages.value, ...newImages];
   return displayImages.value;
 };
