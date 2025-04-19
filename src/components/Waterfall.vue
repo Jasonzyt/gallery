@@ -178,8 +178,17 @@ const appendImages = async (newImages: string[]) => {
     return;
   }
 
-  // 防止重复加载
-  if (isLoading.value) return;
+  // 如果正在加载，则等待加载完成
+  if (isLoading.value) {
+    await new Promise<void>(resolve => {
+      const interval = setInterval(() => {
+        if (!isLoading.value) {
+          clearInterval(interval);
+          resolve();
+        }
+      }, 100);
+    });
+  }
 
   isLoading.value = true;
 
@@ -218,6 +227,8 @@ const appendImages = async (newImages: string[]) => {
 
     // 更新布局
     updateLayout();
+  } catch (e) {
+    console.error("Error loading images: ", e);
   } finally {
     isLoading.value = false;
   }

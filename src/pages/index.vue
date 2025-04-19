@@ -8,7 +8,7 @@
 <script lang="ts" setup>
 const showViewer = ref(false);
 const allPhotos = getAllPhotoUrls()
-const photos = allPhotos.slice(0, 19) // 只取前20张图片
+const photos: string[] = []
 const lgPhotos = formatUrlsWithSize(photos, 'lg')
 const smPhotos = formatUrlsWithSize(photos, 'sm')
 const pageCount = ref(0)
@@ -45,11 +45,12 @@ const previousPhoto = (currentIndex: number) => {
 }
 
 const handleLoadMore = () => {
-  pageCount.value++
   const startIndex = pageCount.value * 20
   let endIndex = (pageCount.value + 1) * 20 - 1
+  pageCount.value++
   if (startIndex >= allPhotos.length) {
-
+    setEndReached(true)
+    return
   }
   if (endIndex >= allPhotos.length) {
     endIndex = allPhotos.length - 1
