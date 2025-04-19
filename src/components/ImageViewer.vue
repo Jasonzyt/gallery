@@ -15,7 +15,7 @@
             </Transition>
 
             <Transition name="fade-scale">
-              <div v-show="!isTouchDevice && showInfoTrigger && !showInfo"
+              <div v-show="(isTouchDevice || (!isTouchDevice && showInfoTrigger)) && !showInfo"
                 class="absolute bottom-6 left-1/2 transform -translate-x-1/2 cursor-pointer flex items-center bg-black/50 px-4 py-2 rounded-full"
                 @click="handleInfoToggleClick" ref="infoToggleRef">
                 <Icon name="i-heroicons-information-circle" class="text-2xl text-white mr-2" />
@@ -169,11 +169,6 @@ const handleTouchMove = (e: TouchEvent) => {
 
     touchMoveX.value = currentX;
     touchMoveY.value = currentY;
-
-    // 可选：如果滑动干扰了页面滚动，可以在这里阻止默认行为
-    // if (isSwiping.value) {
-    //   e.preventDefault();
-    // }
   }
 };
 
