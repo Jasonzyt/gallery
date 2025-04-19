@@ -8,9 +8,8 @@
 
 
   <!-- 底部结束提示 -->
-  <div v-if="hasReachedEnd" class="w-full py-4 text-center text-gray-500">
-    {{ endText }}
-  </div>
+  <USeparator v-if="hasReachedEnd" class="w-full px-4 pb-4 text-center" :ui="{ container: 'text-gray-500' }"
+    :label="endText" />
 </template>
 <script lang="ts" setup>
 import { ref } from 'vue';
