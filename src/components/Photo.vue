@@ -4,7 +4,7 @@
     <NuxtImg :src="src" :alt="alt" ref="img" class="size-full object-cover rounded-xl z-0" />
     <p v-if="description.length !== 0"
       class="absolute w-full mt-[-3rem] py-3 px-4 rounded-b-xl text-gray-100 transition-opacity duration-300 z-10"
-      :class="isHovering ? 'opacity-100' : 'opacity-0'">
+      :class="(isHovering || isTouchDevice) ? 'opacity-100' : 'opacity-0'">
       {{ description }}
     </p>
   </div>
@@ -31,9 +31,10 @@ const description = ref("")
 
 onMounted(async () => {
   const exif = await exifr.parse(props.src)
-  // console.log(exif)
   description.value = exif?.ImageDescription || ""
 })
+
+const isTouchDevice = ('ontouchstart' in window || navigator.maxTouchPoints > 0)
 
 </script>
 
