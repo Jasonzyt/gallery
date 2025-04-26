@@ -18,7 +18,11 @@ export function getAlbum(id: string): Album | undefined {
 }
 
 export function formatUrlsWithSize(urls: string[], size: string): string[] {
-  return urls.map((it) => it.replace("{size}", size));
+  return urls.map((it) => formatUrlWithSize(it, size));
+}
+
+export function formatUrlWithSize(url: string, size: string): string {
+  return url.replace("{size}", size);
 }
 
 export function getAlbumPhotoUrls(
