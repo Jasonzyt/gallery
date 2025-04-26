@@ -36,8 +36,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-
 const links = ref([
   {
     label: "Photo",
@@ -47,11 +45,12 @@ const links = ref([
   {
     label: "Album",
     icon: "i-ic-baseline-burst-mode",
+    to: "/albums"
   },
   {
     label: "Timeline",
     icon: "i-material-symbols-timer-play-outline",
-    to: "/timeline",
+    // to: "/timeline",
     disabled: true
   }
 ]);
@@ -115,4 +114,16 @@ const handleTouchEnd = () => {
   touchStartX.value = 0;
   touchEndX.value = 0;
 };
+
+watch(
+  () => useRoute().path,
+  (newPath, oldPath) => {
+    // Close the menu when navigating to a new route
+    if (isMenuOpen.value) {
+      isMenuOpen.value = false;
+    }
+  },
+  { immediate: true, deep: true }
+)
+
 </script>

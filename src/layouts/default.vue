@@ -6,7 +6,7 @@
     </div>
 
     <!-- 内容区域 - 在sm以上屏幕宽度时占85%并右移 -->
-    <div class="sm:ml-[15vw] p-2 sm:p-0 min-h-screen">
+    <div class="sm:ml-[15vw] w-full min-h-screen">
       <slot />
     </div>
   </div>

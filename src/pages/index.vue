@@ -1,6 +1,10 @@
 <template>
-  <Masonry ref="masonry" :images="smPhotos" height="250px" @click="handleClick" @load-more="handleLoadMore" />
-  <Waterfall ref="waterfall" :images="smPhotos" @click="handleClick" @load-more="handleLoadMore" />
+  <div class="p-4 max-sm:hidden">
+    <Masonry ref="masonry" :images="smPhotos" height="250px" @click="handleClick" @load-more="handleLoadMore" />
+  </div>
+  <div class="p-2.5 sm:hidden">
+    <Waterfall ref="waterfall" :images="smPhotos" @click="handleClick" @load-more="handleLoadMore" />
+  </div>
   <ImageViewer v-model="showViewer" :next-photo="nextPhoto" :previous-photo="previousPhoto"
     :initial-image-src="lgPhotos[initialIndex]" :initial-index="initialIndex" />
 </template>

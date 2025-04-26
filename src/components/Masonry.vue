@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full flex flex-wrap gap-4 py-4 px-8 max-sm:hidden">
+  <div class="w-full flex flex-wrap gap-4">
     <Photo v-for="(img, index) in displayImages" :src="img" :alt="img" class="item hover:shadow-xl transition-shadow"
       @click="$emit('click', img, index)" />
     <!-- 用于触发加载更多的不可见标记元素 -->
@@ -33,7 +33,7 @@ const props = defineProps({
   },
   loadMoreThreshold: {
     type: Number,
-    default: 400
+    default: window.innerWidth / 6
   },
   endText: {
     type: String,
@@ -82,8 +82,10 @@ const setupObserver = () => {
   // 创建Observer实例
   observer.value = new IntersectionObserver((entries) => {
     const entry = entries[0];
-    // 当触发元素进入视口时
-    triggerLoadMore();
+    console.log('entry', entry);
+    if (entry.isIntersecting) {
+      triggerLoadMore();
+    }
   }, {
     // 设置根元素为视口
     root: null,
