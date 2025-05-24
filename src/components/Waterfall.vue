@@ -3,7 +3,7 @@
     <div ref="masonryContainer" class="sm:hidden flex w-full" :style="`gap: ${gap}`">
       <!-- 动态生成多栏 -->
       <div v-for="colIndex in columns" :key="colIndex" class="flex flex-col"
-        :style="`width: ${100 / columns}%; gap: ${gap}`">
+        :style="`width: ${100 / columns}%; gap: ${gap}`" ref="columnsRef">
         <Photo v-for="img in columnImages[colIndex - 1]" :key="img.src" :src="img.src" :alt="img.src"
           :style="img.maxHeight ? `max-height: ${img.maxHeight}` : ''"
           class="w-full transition-shadow hover:shadow-xl cursor-pointer"
@@ -22,10 +22,6 @@
 
 <script lang="ts" setup>
 const props = defineProps({
-  images: {
-    type: Array<string>,
-    required: true
-  },
   columns: {
     type: Number,
     default: 2
@@ -43,11 +39,6 @@ const props = defineProps({
     type: Number,
     default: 400
   },
-  // 是否启用自动检测滚动加载
-  enableAutoLoad: {
-    type: Boolean,
-    default: true
-  },
   // 结束提示文本
   endText: {
     type: String,
@@ -60,6 +51,7 @@ const emit = defineEmits(["click", "loadMore"]);
 // 容器引用
 const masonryContainer = useTemplateRef('masonryContainer');
 const loadMoreTrigger = useTemplateRef('loadMoreTrigger');
+const columnsRef = useTemplateRef('columnsRef');
 
 // 是否已到达底部
 const hasReachedEnd = ref(false);
@@ -69,6 +61,7 @@ const observer = ref<IntersectionObserver | null>(null);
 const imageData = reactive<{
   items: Array<{
     src: string;
+    width: number;
     height: number;
     loaded: boolean;
     originalIndex: number;
@@ -83,6 +76,8 @@ const columnImages = ref<Array<Array<{
   maxHeight?: string;
 }>>>(Array.from({ length: props.columns }, () => []));
 
+const columnWidth = ref(400)
+const columnGap = ref(16);
 // 每列的累积高度
 const columnHeights = ref<number[]>(Array(props.columns).fill(0));
 
@@ -93,57 +88,8 @@ const isLoading = ref(false);
 const initializeColumns = () => {
   columnImages.value = Array.from({ length: props.columns }, () => []);
   columnHeights.value = Array(props.columns).fill(0);
-};
-
-// 加载图片并获取高度
-const loadImages = async (images: string[]) => {
-  // 防止重复加载
-  if (isLoading.value) return;
-
-  isLoading.value = true;
-
-  try {
-    // 重置图片数据
-    imageData.items = [];
-
-    // 创建新的图片项
-    const newItems = images.map((src, index) => ({
-      src,
-      height: 0,
-      loaded: false,
-      originalIndex: index,
-      maxHeight: props.maxHeight || undefined
-    }));
-
-    // 添加到现有数组
-    imageData.items.push(...newItems);
-
-    // 加载所有图片并获取高度
-    await Promise.all(newItems.map(item => {
-      return new Promise<void>((resolve) => {
-        const img = new Image();
-        img.onload = () => {
-          item.height = img.height;
-          item.loaded = true;
-          resolve();
-        };
-        img.onerror = () => {
-          item.height = 300; // 默认高度
-          item.loaded = true;
-          resolve();
-        };
-        img.src = item.src;
-      });
-    }));
-
-    // 更新布局
-    updateLayout();
-
-    // 重置结束状态
-    hasReachedEnd.value = false;
-  } finally {
-    isLoading.value = false;
-  }
+  columnWidth.value = columnsRef.value?.at(0)?.clientWidth || 200;
+  columnGap.value = (columnsRef.value?.at(0)?.computedStyleMap()?.get("column-gap") as CSSUnitValue).value || 16;
 };
 
 // 更新布局
@@ -166,9 +112,15 @@ const updateLayout = () => {
       maxHeight: item.maxHeight
     });
 
+    const actualHeight = item.height * (columnWidth.value / item.width);
+
     // 更新该列的高度
-    columnHeights.value[minHeightIndex] += item.height + parseFloat(props.gap);
+    columnHeights.value[minHeightIndex] += actualHeight + columnGap.value;
+
+    console.log(`Adding image ${item.src} ${actualHeight} to column ${minHeightIndex}, new height: ${columnHeights.value[minHeightIndex]}`);
   });
+
+  console.log("Column heights: ", columnHeights.value);
 };
 
 // 添加新图片
@@ -198,6 +150,7 @@ const appendImages = async (newImages: string[]) => {
     // 创建新的图片项
     const newItems = newImages.map((src, index) => ({
       src,
+      width: 0,
       height: 0,
       loaded: false,
       originalIndex: startIndex + index,
@@ -212,12 +165,13 @@ const appendImages = async (newImages: string[]) => {
       return new Promise<void>((resolve) => {
         const img = new Image();
         img.onload = () => {
+          item.width = img.width;
           item.height = img.height;
           item.loaded = true;
           resolve();
         };
         img.onerror = () => {
-          item.height = 300; // 默认高度
+          // item.height = 300; // 默认高度
           item.loaded = true;
           resolve();
         };
@@ -238,7 +192,9 @@ const appendImages = async (newImages: string[]) => {
 const resetImages = async (images: string[] = []) => {
   // 重置结束状态
   hasReachedEnd.value = false;
-  await loadImages(images);
+  imageData.items = [];
+  initializeColumns();
+  await appendImages(images);
 };
 
 // 获取当前所有图片
@@ -284,11 +240,6 @@ const triggerLoadMore = () => {
   emit('loadMore');
 };
 
-// 监听初始props.images变化
-watch(() => props.images, async (newImages) => {
-  await loadImages([...newImages]);
-}, { immediate: true });
-
 // 监听列数变化
 watch(() => props.columns, () => {
   updateLayout();
@@ -302,21 +253,9 @@ watch(() => props.maxHeight, () => {
   updateLayout();
 });
 
-// 监听enableAutoLoad变化
-watch(() => props.enableAutoLoad, (newValue) => {
-  if (newValue) {
-    setupObserver();
-  } else {
-    cleanupObserver();
-  }
-});
-
 // 组件挂载后初始化
 onMounted(async () => {
   await nextTick();
-  if (props.images.length > 0) {
-    await loadImages([...props.images]);
-  }
   setupObserver();
 });
 
