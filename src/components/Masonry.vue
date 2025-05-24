@@ -6,14 +6,11 @@
     <div ref="loadMoreTrigger" class="w-full h-1 bottom-0 opacity-0"></div>
   </div>
 
-
   <!-- 底部结束提示 -->
   <USeparator v-if="hasReachedEnd" class="w-full px-4 pb-4 text-center" :ui="{ container: 'text-gray-500' }"
     :label="endText" />
 </template>
 <script lang="ts" setup>
-import { ref } from 'vue';
-
 const props = defineProps({
   height: {
     type: String,
@@ -23,17 +20,9 @@ const props = defineProps({
     type: String,
     default: "50%"
   },
-  images: {
-    type: Array<string>,
-    default: () => []
-  },
-  enableAutoLoad: {
-    type: Boolean,
-    default: true
-  },
   loadMoreThreshold: {
     type: Number,
-    default: window.innerWidth / 6
+    default: window.innerHeight * 0.2
   },
   endText: {
     type: String,
@@ -48,7 +37,7 @@ const hasReachedEnd = ref(false);
 const observer = ref<IntersectionObserver | null>(null);
 
 // 使用ref来管理图片，允许我们修改显示的图片
-const displayImages = ref<string[]>([...props.images]);
+const displayImages = ref<string[]>([]);
 
 // 添加新图片到现有的图片集合中
 const appendImages = (newImages: string[] | undefined) => {
@@ -110,15 +99,6 @@ const cleanupObserver = () => {
 const triggerLoadMore = () => {
   emit('loadMore');
 };
-
-// 监听enableAutoLoad变化
-watch(() => props.enableAutoLoad, (newValue) => {
-  if (newValue) {
-    setupObserver();
-  } else {
-    cleanupObserver();
-  }
-});
 
 // 组件挂载后初始化
 onMounted(async () => {
