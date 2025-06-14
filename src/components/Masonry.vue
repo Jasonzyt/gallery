@@ -14,7 +14,16 @@
 const props = defineProps({
   height: {
     type: String,
-    default: "300px"
+    default: () => {
+      let result = window.innerWidth * 0.15
+      if (result < 150) {
+        result = 150;
+      }
+      if (result > 275) {
+        result = 275;
+      }
+      return `${result}px`;
+    }
   },
   maxWidth: {
     type: String,
