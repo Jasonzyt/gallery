@@ -71,24 +71,23 @@
     </div>
   </Transition>
 </template>
+
 <script setup lang="ts">
 const props = defineProps({
   nextPhoto: {
-    type: Function,
-    required: true
+    type: Function
   },
   previousPhoto: {
-    type: Function,
-    required: true
+    type: Function
+  },
+  photoList: {
+    type: Array as () => string[],
+    default: () => []
   },
   initialImageSrc: {
     type: String,
     default: ''
   },
-  initialIndex: {
-    type: Number,
-    default: 0
-  }
 });
 
 const show = defineModel<boolean>();
@@ -96,13 +95,13 @@ const show = defineModel<boolean>();
 const emit = defineEmits(['update:modelValue']);
 
 // 状态管理
-const currentImageSrc = ref(props.initialImageSrc);
 const preloadSrc = ref('');
 const isLoading = ref(true);
 const showInfoTrigger = ref(false); // 控制Info图标显示 (非触屏)
 const showInfo = ref(false); // 控制信息面板显示
 const mouseY = ref(0);
-const currentIndex = ref(props.initialIndex);
+const currentIndex = ref(0);
+const currentImageSrc = ref(props.initialImageSrc.length === 0 ? props.photoList[currentIndex.value] : props.initialImageSrc);
 const hasPrevious = ref(false);
 const hasNext = ref(false);
 const exifData = ref({});
@@ -119,6 +118,20 @@ const touchMoveY = ref(0);        // 触摸移动 Y 坐标 (实时更新)
 const swipeThresholdY = 50;       // 触发 *垂直* 滑动的最小距离 (像素) - 用于显示 Info
 const swipeThresholdX = 75;       // 触发 *水平* 滑动的最小距离 (像素) - 用于切换图片
 const isSwiping = ref(false);     // 标记是否正在进行滑动操作
+
+const getNextPhoto = (index: number = currentIndex.value) => {
+  if (props.nextPhoto) {
+    return props.nextPhoto(index);
+  }
+  return props.photoList[index + 1] || null;
+};
+
+const getPreviousPhoto = (index: number = currentIndex.value) => {
+  if (props.previousPhoto) {
+    return props.previousPhoto(index);
+  }
+  return props.photoList[index - 1] || null;
+};
 
 // 鼠标移动处理 (仅非触屏设备)
 const handleMouseMove = (e: MouseEvent) => {
@@ -267,7 +280,7 @@ const prevImage = () => {
   if (!hasPrevious.value || showInfo.value) return; // Info 显示时不允许切换
 
   isLoading.value = true; // 切换时显示加载状态
-  const prevSrc = props.previousPhoto(currentIndex.value);
+  const prevSrc = getPreviousPhoto(currentIndex.value);
   if (prevSrc) {
     currentImageSrc.value = prevSrc;
     currentIndex.value--;
@@ -283,7 +296,7 @@ const nextImage = () => {
   if (!hasNext.value || showInfo.value) return; // Info 显示时不允许切换
 
   isLoading.value = true; // 切换时显示加载状态
-  const nextSrc = props.nextPhoto(currentIndex.value);
+  const nextSrc = getNextPhoto(currentIndex.value);
   if (nextSrc) {
     currentImageSrc.value = nextSrc;
     currentIndex.value++;
@@ -297,7 +310,7 @@ const nextImage = () => {
 
 // 预加载下一张图片 (保持不变)
 const preloadNextImage = () => {
-  const nextSrc = props.nextPhoto(currentIndex.value);
+  const nextSrc = getNextPhoto(currentIndex.value);
   if (nextSrc) {
     preloadSrc.value = nextSrc;
   } else {
@@ -323,6 +336,7 @@ const closeViewer = () => {
 
 // 更新导航状态
 const updateNavState = async () => {
+  console.log('Updating navigation state...', currentIndex.value, currentImageSrc.value);
   try {
     exifData.value = await parseExifCategories(currentImageSrc.value);
   } catch (error) {
@@ -330,8 +344,8 @@ const updateNavState = async () => {
     exifData.value = { '错误': { '信息': '无法加载图片数据' } };
   }
 
-  const prevSrc = props.previousPhoto(currentIndex.value);
-  const nextSrc = props.nextPhoto(currentIndex.value);
+  const prevSrc = getNextPhoto(currentIndex.value);
+  const nextSrc = getPreviousPhoto(currentIndex.value);
 
   hasPrevious.value = !!prevSrc;
   hasNext.value = !!nextSrc;
@@ -340,6 +354,8 @@ const updateNavState = async () => {
 // 生命周期钩子
 onMounted(() => {
   isTouchDevice.value = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+  console.log(props)
 
   if (viewerRef.value) {
     refocusViewer();
@@ -352,11 +368,9 @@ onMounted(() => {
   // 初始加载时获取状态
   if (show.value) {
     isLoading.value = true;
-    currentImageSrc.value = props.initialImageSrc;
-    currentIndex.value = props.initialIndex;
     updateNavState().then(() => {
       // 可以在 EXIF 加载后或图片加载后设置 isLoading 为 false
-      // isLoading.value = false; // 移到 NuxtImg 的 @load 事件处理
+      isLoading.value = false; // 移到 NuxtImg 的 @load 事件处理
     });
     preloadNextImage();
     nextTick(refocusViewer);
@@ -374,8 +388,6 @@ onBeforeUnmount(() => {
 watch(() => show.value, (newVal, oldVal) => {
   if (newVal && !oldVal) { // 仅在从 false 变为 true 时执行初始化逻辑
     isLoading.value = true; // 打开时总是显示加载，直到图片加载完成
-    currentImageSrc.value = props.initialImageSrc;
-    currentIndex.value = props.initialIndex;
     showInfo.value = false; // 每次打开都确保 info 是关闭的
     updateNavState(); // 更新导航和 EXIF
     preloadNextImage(); // 预加载
@@ -393,6 +405,27 @@ watch(currentImageSrc, (newSrc, oldSrc) => {
     showInfo.value = false; // 切换图片时自动隐藏 Info
     // updateNavState 和 preloadNextImage 已在 prevImage/nextImage 中调用
   }
+});
+
+const setPhotoIndex = (index: number) => {
+  if (index < 0 || index >= props.photoList.length) return;
+  currentIndex.value = index;
+  currentImageSrc.value = props.photoList[index];
+  updateNavState();
+  preloadNextImage();
+  nextTick(refocusViewer);
+};
+
+defineExpose({
+  show,
+  setPhotoIndex,
+  closeViewer,
+  toggleInfo,
+  isLoading,
+  currentImageSrc,
+  currentIndex,
+  hasPrevious,
+  hasNext
 });
 
 // NuxtImg 的 @load 事件会设置 isLoading = false
