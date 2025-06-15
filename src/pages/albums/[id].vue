@@ -5,7 +5,13 @@
       <h1 class="text-2xl font-bold mb-2">{{ album.name }}</h1>
       <p class="text-gray-600">{{ album.desc }} - {{ photoCount }} photos</p>
     </div>
-    <Masonry ref="masonry" :images="smPhotos" height="250px" @click="handleClick" />
+    <div class="p-4 max-sm:hidden">
+      <Masonry ref="masonry" :list="smPhotos" @click="handleClick" />
+    </div>
+    <div class="p-2.5 sm:hidden">
+      <Waterfall ref="waterfall" :list="smPhotos" @click="handleClick" />
+    </div>
+    <ImageViewer ref="viewer" v-model="showViewer" :photo-list="lgPhotos" />
   </div>
 </template>
 
@@ -26,6 +32,7 @@ if (!album) {
 }
 const photos = getAlbumPhotoUrls(album)
 const smPhotos = formatUrlsWithSize(photos, 'sm')
+const lgPhotos = formatUrlsWithSize(photos, 'lg')
 const photoCount = ref(photos.length)
 const coverImage = ref('')
 if (!album.cover) {
@@ -35,12 +42,12 @@ if (!album.cover) {
 }
 
 const showViewer = ref(false)
+const viewerRef = useTemplateRef('viewer')
 
 const handleClick = (img: string, index: number) => {
   showViewer.value = true
+  viewerRef.value?.setPhotoIndex(index)
 }
 </script>
 
-<style>
-
-</style>
+<style></style>
