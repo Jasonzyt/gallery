@@ -1,6 +1,6 @@
 <template>
   <div class="w-full p-4">
-    <NuxtImg :src="coverImage" alt="Album Cover" class="w-full h-[250px] object-cover rounded-lg mb-8" />
+    <img :src="coverImage" alt="Album Cover" class="w-full h-[250px] object-cover rounded-lg mb-8" />
     <div class="flex flex-col items-center justify-center mb-8">
       <h1 class="text-2xl font-bold mb-2">{{ album.name }}</h1>
       <p class="text-gray-600">{{ album.desc }} - {{ photoCount }} photos</p>
