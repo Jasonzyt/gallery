@@ -4,6 +4,8 @@ import shutil
 import traceback
 from pathlib import Path
 from PIL import Image
+from PIL.ExifTags import TAGS, GPSTAGS
+from typing import Dict, List, Any, Optional
 
 CWD = Path.cwd()
 METADATA_FILE = CWD / "src/utils/meta.json"
@@ -19,7 +21,85 @@ SIZES = {
     "xl": {"max_width": 6000, "quality": 80},
 }
 
-# TODO: filter EXIF
+
+def filter_exif(
+    exif: Optional[Dict[str, Any]], keep_tags: List[str]
+) -> Optional[Dict[str, Any]]:
+    """
+    过滤EXIF数据，只保留指定的标签
+
+    Args:
+        exif: PIL的Image.Exif对象或Python字典
+        keep_tags: 要保留的EXIF标签列表
+
+    Returns:
+        过滤后的EXIF字典，如果输入为None则返回None
+    """
+    if exif is None:
+        return None
+
+    # 确保我们处理的是字典
+    if not isinstance(exif, dict):
+        try:
+            exif_dict = dict(exif)
+        except (TypeError, ValueError):
+            return None
+    else:
+        exif_dict = exif
+
+    # 创建标签ID和名称的映射
+    tag_id_to_name = {v: k for k, v in TAGS.items()}
+    gps_tag_id_to_name = {v: k for k, v in GPSTAGS.items()}
+
+    # 创建新的EXIF字典，只包含需要保留的标签
+    filtered_exif = {}
+
+    # 处理普通EXIF标签
+    for tag_id, value in exif_dict.items():
+        # 跳过GPS信息块，我们会单独处理
+        if tag_id == 34853:  # GPSInfo标签ID
+            continue
+
+        tag_name = TAGS.get(tag_id)
+        if tag_name in keep_tags:
+            filtered_exif[tag_id] = value
+
+    # 处理GPS信息
+    if 34853 in exif_dict:  # GPSInfo标签
+        gps_info = exif_dict[34853]
+        if isinstance(gps_info, dict):
+            gps_filtered = {}
+            for gps_tag_id, gps_value in gps_info.items():
+                gps_tag_name = GPSTAGS.get(gps_tag_id)
+                if f"GPS{gps_tag_name}" in keep_tags:
+                    gps_filtered[gps_tag_id] = gps_value
+
+            if gps_filtered:
+                filtered_exif[34853] = gps_filtered
+
+    return filtered_exif
+
+
+def filter_exif_by_categories(
+    exif: Optional[Dict[str, Any]], categories: Dict[str, List[str]]
+) -> Optional[Dict[str, Any]]:
+    """
+    根据分类标签列表过滤EXIF数据
+
+    Args:
+        exif: PIL的Image.Exif对象或Python字典
+        categories: 按类别分组的要保留的EXIF标签字典
+
+    Returns:
+        过滤后的EXIF字典，如果输入为None则返回None
+    """
+    # 合并所有类别的标签到一个列表
+    all_keep_tags = []
+    for category, tags in categories.items():
+        all_keep_tags.extend(tags)
+
+    # 使用主过滤函数
+    return filter_exif(exif, all_keep_tags)
 
 
 def log_error(msg: str, e: Exception, enable_traceback: bool = True):
