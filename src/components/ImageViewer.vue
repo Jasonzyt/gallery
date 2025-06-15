@@ -336,7 +336,7 @@ const closeViewer = () => {
 
 // 更新导航状态
 const updateNavState = async () => {
-  console.log('Updating navigation state...', currentIndex.value, currentImageSrc.value);
+  // console.log('Updating navigation state...', currentIndex.value, currentImageSrc.value);
   try {
     exifData.value = await parseExifCategories(currentImageSrc.value);
   } catch (error) {
@@ -354,8 +354,6 @@ const updateNavState = async () => {
 // 生命周期钩子
 onMounted(() => {
   isTouchDevice.value = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-
-  console.log(props)
 
   if (viewerRef.value) {
     refocusViewer();
