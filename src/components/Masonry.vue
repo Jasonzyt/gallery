@@ -29,6 +29,10 @@ const props = defineProps({
     type: String,
     default: "50%"
   },
+  list: {
+    type: Array as PropType<string[]>,
+    default: () => []
+  },
   loadMoreThreshold: {
     type: Number,
     default: window.innerHeight * 0.2
@@ -36,6 +40,11 @@ const props = defineProps({
   endText: {
     type: String,
     default: "到底了~"
+  },
+  // expose
+  onLoadMore: {
+    type: Function,
+    default: null
   }
 });
 
@@ -45,7 +54,6 @@ const loadMoreTrigger = ref<HTMLElement | null>(null);
 const hasReachedEnd = ref(false);
 const observer = ref<IntersectionObserver | null>(null);
 
-// 使用ref来管理图片，允许我们修改显示的图片
 const displayImages = ref<string[]>([]);
 
 // 添加新图片到现有的图片集合中
@@ -80,7 +88,7 @@ const setupObserver = () => {
   // 创建Observer实例
   observer.value = new IntersectionObserver((entries) => {
     const entry = entries[0];
-    console.log('entry', entry);
+    // console.log('entry', entry);
     if (entry.isIntersecting) {
       triggerLoadMore();
     }
@@ -106,7 +114,23 @@ const cleanupObserver = () => {
 
 // 触发加载更多事件
 const triggerLoadMore = () => {
-  emit('loadMore');
+  if (props.onLoadMore) {
+    emit('loadMore');
+  } else if (props.list) {
+    const startIndex = displayImages.value.length;
+    let endIndex = startIndex + 20 - 1; // 每次加载20张图片
+    if (startIndex >= props.list.length) {
+      setEndReached(true);
+      return;
+    }
+    if (endIndex >= props.list.length) {
+      endIndex = props.list.length - 1;
+    }
+    const newImages = props.list.slice(startIndex, endIndex + 1);
+    appendImages(newImages);
+  } else {
+    console.warn("No loadMore event handler provided.");
+  }
 };
 
 // 组件挂载后初始化

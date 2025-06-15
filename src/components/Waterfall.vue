@@ -34,6 +34,10 @@ const props = defineProps({
     type: String,
     default: ""
   },
+  list: {
+    type: Array as PropType<string[]>,
+    default: () => []
+  },
   // 触发加载更多的距离阈值，默认为400px
   loadMoreThreshold: {
     type: Number,
@@ -43,6 +47,11 @@ const props = defineProps({
   endText: {
     type: String,
     default: "到底了~"
+  },
+  // expose
+  onLoadMore: {
+    type: Function,
+    default: null
   }
 });
 
@@ -117,10 +126,10 @@ const updateLayout = () => {
     // 更新该列的高度
     columnHeights.value[minHeightIndex] += actualHeight + columnGap.value;
 
-    console.log(`Adding image ${item.src} ${actualHeight} to column ${minHeightIndex}, new height: ${columnHeights.value[minHeightIndex]}`);
+    // console.log(`Adding image ${item.src} ${actualHeight} to column ${minHeightIndex}, new height: ${columnHeights.value[minHeightIndex]}`);
   });
 
-  console.log("Column heights: ", columnHeights.value);
+  // console.log("Column heights: ", columnHeights.value);
 };
 
 // 添加新图片
@@ -237,7 +246,23 @@ const cleanupObserver = () => {
 const triggerLoadMore = () => {
   if (isLoading.value || hasReachedEnd.value) return;
 
-  emit('loadMore');
+  if (props.onLoadMore) {
+    emit('loadMore');
+  } else if (props.list) {
+    const startIndex = imageData.items.length;
+    let endIndex = startIndex + 20 - 1; // 每次加载20张图片
+    if (startIndex >= props.list.length) {
+      setEndReached(true);
+      return;
+    }
+    if (endIndex >= props.list.length) {
+      endIndex = props.list.length - 1;
+    }
+    const newImages = props.list.slice(startIndex, endIndex + 1);
+    appendImages(newImages);
+  } else {
+    console.warn("No loadMore event handler provided.");
+  }
 };
 
 // 监听列数变化
