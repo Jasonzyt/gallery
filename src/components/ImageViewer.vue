@@ -6,7 +6,7 @@
         @touchstart.passive="handleTouchStart" @touchmove.passive="handleTouchMove" @touchend="handleTouchEnd">
         <Transition name="slide" mode="out-in">
           <div :key="currentImageSrc" class="flex items-center justify-center w-full h-full">
-            <NuxtImg v-if="currentImageSrc" :src="currentImageSrc" class="max-w-full max-h-screen object-contain"
+            <img v-if="currentImageSrc" :src="currentImageSrc" class="max-w-full max-h-screen object-contain"
               @load="isLoading = false" />
             <Transition name="fade">
               <div v-show="!isTouchDevice && showInfoTrigger && !showInfo"
@@ -65,7 +65,7 @@
         </div>
 
         <div class="hidden">
-          <NuxtImg v-if="preloadSrc" :src="preloadSrc" @load="handlePreloadComplete" />
+          <img v-if="preloadSrc" :src="preloadSrc" />
         </div>
       </div>
     </div>
@@ -315,10 +315,6 @@ const preloadNextImage = () => {
   } else {
     preloadSrc.value = ''; // 如果没有下一张，清空预加载
   }
-};
-
-const handlePreloadComplete = () => {
-  // console.log('Next image preloaded');
 };
 
 // 重新聚焦 (保持不变)

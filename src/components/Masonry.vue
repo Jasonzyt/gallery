@@ -68,18 +68,16 @@ const appendImages = (newImages: string[] | undefined) => {
   isLoading.value = true
   let loadCount = 0;
   newImages.forEach(async (img) => {
-    if (!displayImages.value.includes(img)) {
-      loadImage(img).finally(() => {
-        loadCount++
-        if (loadCount === newImages.length) {
-          displayImages.value.push(...newImages);
-          isLoading.value = false;
-        }
-      })
-    }
+    loadImage(img).finally(() => {
+      loadCount++
+      if (loadCount === newImages.length) {
+        displayImages.value.push(...newImages);
+        isLoading.value = false;
+      }
+    })
   });
 
-  return displayImages.value;
+  // return displayImages.value;
 };
 
 // 重置图片集合为新的图片数组
