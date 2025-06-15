@@ -26,4 +26,3 @@ logs
 # Images
 /src/public/assets/albums
 /src/public/assets/import-albums
-/src/utils/meta.json
