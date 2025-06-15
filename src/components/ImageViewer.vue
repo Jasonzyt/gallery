@@ -149,9 +149,8 @@ const toggleInfo = () => {
   showInfo.value = !showInfo.value;
 };
 
-// Info 按钮点击处理 (仅非触屏)
+// Info 按钮点击处理 
 const handleInfoToggleClick = (e: MouseEvent) => {
-  if (isTouchDevice.value) return;
   e.stopPropagation();
   toggleInfo();
 };
