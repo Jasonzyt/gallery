@@ -2,12 +2,13 @@
   <div class="w-full flex flex-wrap gap-4">
     <Photo v-for="(img, index) in displayImages" :src="img" :alt="img" class="item hover:shadow-xl transition-shadow"
       @click="$emit('click', img, index)" />
+    <Loading :visible="isLoading" class="w-full mt-8" type="wave" :overlay="false" :fullscreen="false" />
     <!-- 用于触发加载更多的不可见标记元素 -->
     <div ref="loadMoreTrigger" class="w-full h-1 bottom-0 opacity-0"></div>
   </div>
 
   <!-- 底部结束提示 -->
-  <USeparator v-if="hasReachedEnd" class="w-full px-4 pb-4 text-center" :ui="{ container: 'text-gray-500' }"
+  <USeparator v-if="hasReachedEnd" class="w-full px-4 text-center" :ui="{ container: 'text-gray-500' }"
     :label="endText" />
 </template>
 <script lang="ts" setup>
@@ -50,6 +51,7 @@ const props = defineProps({
 
 const emit = defineEmits(["click", "loadMore"]);
 
+const isLoading = ref(false);
 const loadMoreTrigger = ref<HTMLElement | null>(null);
 const hasReachedEnd = ref(false);
 const observer = ref<IntersectionObserver | null>(null);
@@ -62,7 +64,21 @@ const appendImages = (newImages: string[] | undefined) => {
     hasReachedEnd.value = true;
     return displayImages.value;
   }
-  displayImages.value = [...displayImages.value, ...newImages];
+
+  isLoading.value = true
+  let loadCount = 0;
+  newImages.forEach(async (img) => {
+    if (!displayImages.value.includes(img)) {
+      loadImage(img).finally(() => {
+        loadCount++
+        if (loadCount === newImages.length) {
+          displayImages.value.push(...newImages);
+          isLoading.value = false;
+        }
+      })
+    }
+  });
+
   return displayImages.value;
 };
 

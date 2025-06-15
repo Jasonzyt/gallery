@@ -13,6 +13,7 @@
       <!-- 用于触发加载更多的不可见标记元素 -->
       <div ref="loadMoreTrigger" class="w-full h-1 absolute bottom-0 opacity-0"></div>
     </div>
+    <Loading :visible="isLoading" class="w-full mt-16" type="wave" :overlay="false" :fullscreen="false" />
 
     <!-- 底部结束提示 -->
     <USeparator v-if="hasReachedEnd" class="w-full px-2 py-4 text-center" :ui="{ container: 'text-gray-500' }"
