@@ -3,12 +3,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "python tool/import_albums.py && nuxt build",
-    "dev": "python tool/import_albums.py && nuxt dev",
+    "build": "nuxt build",
+    "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "import-albums": "python tool/import_albums.py"
+    "importalbums": "python tool/import_albums.py"
   },
   "dependencies": {
     "@iconify-json/ic": "^1.2.2",
