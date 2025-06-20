@@ -16,7 +16,8 @@
           </div>
         </div>
         <!-- 渐变遮罩 -->
-        <div class="absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-white to-transparent pointer-events-none">
+        <div
+          class="absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-white to-transparent dark:from-[#0f172b] pointer-events-none">
         </div>
       </div>
     </div>
