@@ -20,7 +20,7 @@
       class="w-full min-h-full pt-2 pb-6 pl-2 pr-2 sm:pl-4 sm:border-r-2 border-gray-200 dark:border-gray-800 max-sm:bg-white max-sm:dark:bg-[#0f172b] flex flex-col max-sm:fixed max-sm:left-0 max-sm:top-0 max-sm:bottom-0 max-sm:w-[80%] max-sm:z-20 max-sm:transform max-sm:transition-transform max-sm:duration-300 max-sm:ease-in-out"
       :class="isMenuOpen ? 'max-sm:translate-x-0' : 'max-sm:-translate-x-full'">
       <h2 class="px-4 pt-4 pb-2.5 text-2xl">
-        <Icon name="my:gallery" size="1.4em" class="align-text-bottom mr-2" />Gallery
+        <Icon name="my:gallery" size="1.4em" class="align-text-bottom mr-2.5" />Gallery
       </h2>
       <USeparator class="my-2" />
       <UNavigationMenu :items="links" orientation="vertical"
