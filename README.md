@@ -1,7 +1,7 @@
 # Gallery📷
 
-Best gallery website to present your photographs!   
-Support both local and remote image sources  
+Best gallery website to present your photographs!  
+Support both local and remote image sources
 
 ## Build
 
@@ -27,4 +27,3 @@ pnpm run build
 ## Known Bugs
 
 - [ ] Failed to disable body scroll
-- [ ] Masonry's default height won't change as window resizes

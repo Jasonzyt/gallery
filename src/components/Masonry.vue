@@ -11,20 +11,25 @@
   <USeparator v-if="hasReachedEnd" class="w-full px-4 text-center" :ui="{ container: 'text-gray-500' }"
     :label="endText" />
 </template>
+
+<script lang="ts">
+const calcHeight = (x: number = 0.15) => {
+  let result = window.innerWidth * x;
+  if (result < 150) {
+    result = 150;
+  }
+  if (result > 275) {
+    result = 275;
+  }
+  return `${result}px`;
+};
+</script>
+
 <script lang="ts" setup>
 const props = defineProps({
   height: {
     type: String,
-    default: () => {
-      let result = window.innerWidth * 0.15
-      if (result < 150) {
-        result = 150;
-      }
-      if (result > 275) {
-        result = 275;
-      }
-      return `${result}px`;
-    }
+    default: () => calcHeight(0.15)
   },
   maxWidth: {
     type: String,
@@ -52,6 +57,7 @@ const props = defineProps({
 const emit = defineEmits(["click", "loadMore"]);
 
 const isLoading = ref(false);
+const currentHeight = ref<string>(props.height);
 const loadMoreTrigger = ref<HTMLElement | null>(null);
 const hasReachedEnd = ref(false);
 const observer = ref<IntersectionObserver | null>(null);
@@ -147,9 +153,13 @@ const triggerLoadMore = () => {
   }
 };
 
+
 // 组件挂载后初始化
 onMounted(async () => {
   setupObserver();
+  window.onresize = () => {
+    currentHeight.value = calcHeight();
+  };
 });
 
 // 组件卸载前清理
@@ -169,7 +179,7 @@ defineExpose({
 .item {
   flex-grow: 1;
   object-fit: cover;
-  height: v-bind("height");
+  height: v-bind("currentHeight");
   max-width: v-bind("maxWidth");
 }
 </style>
