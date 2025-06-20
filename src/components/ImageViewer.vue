@@ -75,10 +75,12 @@
 <script setup lang="ts">
 const props = defineProps({
   nextPhoto: {
-    type: Function
+    type: Function,
+    validate: (value: Function) => typeof value() === 'string' || typeof value() === 'undefined',
   },
   previousPhoto: {
-    type: Function
+    type: Function,
+    validate: (value: Function) => typeof value() === 'string' || typeof value() === 'undefined',
   },
   photoList: {
     type: Array as () => string[],
@@ -102,8 +104,8 @@ const showInfo = ref(false); // 控制信息面板显示
 const mouseY = ref(0);
 const currentIndex = ref(0);
 const currentImageSrc = ref(props.initialImageSrc.length === 0 ? props.photoList[currentIndex.value] : props.initialImageSrc);
-const hasPrevious = ref(false);
-const hasNext = ref(false);
+const hasPrevious = ref<boolean>(getPreviousPhoto() != undefined);
+const hasNext = ref<boolean>(getNextPhoto() != undefined);
 const exifData = ref({});
 const viewerRef = useTemplateRef('viewerRef');
 const infoRef = useTemplateRef('infoRef');
@@ -119,18 +121,18 @@ const swipeThresholdY = 50;       // 触发 *垂直* 滑动的最小距离 (像�
 const swipeThresholdX = 75;       // 触发 *水平* 滑动的最小距离 (像素) - 用于切换图片
 const isSwiping = ref(false);     // 标记是否正在进行滑动操作
 
-const getNextPhoto = (index: number = currentIndex.value) => {
+function getNextPhoto(index: number = currentIndex.value): string | undefined {
   if (props.nextPhoto) {
     return props.nextPhoto(index);
   }
-  return props.photoList[index + 1] || null;
+  return props.photoList[index + 1] || undefined;
 };
 
-const getPreviousPhoto = (index: number = currentIndex.value) => {
+function getPreviousPhoto(index: number = currentIndex.value): string | undefined {
   if (props.previousPhoto) {
     return props.previousPhoto(index);
   }
-  return props.photoList[index - 1] || null;
+  return props.photoList[index - 1] || undefined;
 };
 
 // 鼠标移动处理 (仅非触屏设备)
@@ -339,11 +341,11 @@ const updateNavState = async () => {
     exifData.value = { '错误': { '信息': '无法加载图片数据' } };
   }
 
-  const prevSrc = getNextPhoto(currentIndex.value);
-  const nextSrc = getPreviousPhoto(currentIndex.value);
+  const prevSrc = getPreviousPhoto();
+  const nextSrc = getNextPhoto();
 
-  hasPrevious.value = !!prevSrc;
-  hasNext.value = !!nextSrc;
+  hasPrevious.value = prevSrc != undefined;
+  hasNext.value = nextSrc != undefined;
 };
 
 // 生命周期钩子
@@ -382,7 +384,9 @@ watch(() => show.value, (newVal, oldVal) => {
   if (newVal && !oldVal) { // 仅在从 false 变为 true 时执行初始化逻辑
     isLoading.value = true; // 打开时总是显示加载，直到图片加载完成
     showInfo.value = false; // 每次打开都确保 info 是关闭的
-    updateNavState(); // 更新导航和 EXIF
+    updateNavState().then(() => {
+      isLoading.value = false;
+    });
     preloadNextImage(); // 预加载
     nextTick(refocusViewer); // 获取焦点
   } else if (!newVal) {
