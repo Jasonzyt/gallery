@@ -107,6 +107,8 @@ const currentImageSrc = ref(props.initialImageSrc.length === 0 ? props.photoList
 const hasPrevious = ref<boolean>(getPreviousPhoto() != undefined);
 const hasNext = ref<boolean>(getNextPhoto() != undefined);
 const exifData = ref({});
+const bodyScrollLocked = ref(false);
+
 const viewerRef = useTemplateRef('viewerRef');
 const infoRef = useTemplateRef('infoRef');
 const infoToggleRef = useTemplateRef('infoToggleRef');
@@ -352,6 +354,8 @@ const updateNavState = async () => {
 onMounted(() => {
   isTouchDevice.value = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
+  useBodyScrollLock(bodyScrollLocked)
+
   if (viewerRef.value) {
     refocusViewer();
     if (!isTouchDevice.value) {
@@ -360,12 +364,10 @@ onMounted(() => {
     // 注意：触摸事件已绑定在模板中的目标元素上，无需在此处通过 window 添加
   }
 
-  // 初始加载时获取状态
   if (show.value) {
     isLoading.value = true;
     updateNavState().then(() => {
-      // 可以在 EXIF 加载后或图片加载后设置 isLoading 为 false
-      isLoading.value = false; // 移到 NuxtImg 的 @load 事件处理
+      isLoading.value = false;
     });
     preloadNextImage();
     nextTick(refocusViewer);
@@ -376,21 +378,21 @@ onBeforeUnmount(() => {
   if (!isTouchDevice.value) {
     window.removeEventListener('mousemove', handleMouseMove);
   }
-  // 触摸事件监听器会随组件卸载自动移除
 });
 
 // 监听 show 变化
 watch(() => show.value, (newVal, oldVal) => {
-  if (newVal && !oldVal) { // 仅在从 false 变为 true 时执行初始化逻辑
+  if (newVal && !oldVal) {
     isLoading.value = true; // 打开时总是显示加载，直到图片加载完成
     showInfo.value = false; // 每次打开都确保 info 是关闭的
+    bodyScrollLocked.value = true; // 锁定 body 滚动
     updateNavState().then(() => {
       isLoading.value = false;
     });
     preloadNextImage(); // 预加载
     nextTick(refocusViewer); // 获取焦点
   } else if (!newVal) {
-    // 可选：关闭时重置一些状态
+    bodyScrollLocked.value = false; // 锁定 body 滚动
     preloadSrc.value = ''; // 清空预加载
   }
 });

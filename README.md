@@ -23,7 +23,3 @@ pnpm run build
 - [vuejs/vue](https://github.com/vuejs/vue) - MIT
 - [nuxt/nuxt](https://github.com/nuxt/nuxt) - MIT
 - [tailwindlabs/tailwindcss](https://github.com/tailwindlabs/tailwindcss) - MIT
-
-## Known Bugs
-
-- [ ] Failed to disable body scroll
