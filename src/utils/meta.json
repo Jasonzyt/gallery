@@ -5,7 +5,7 @@
       "name": "2025厦门上海",
       "desc": "旅行！",
       "cover": null,
-      "urlFormat": "/oss/img/2025厦门&上海/{photo}-{size}.jpg",
+      "urlFormat": "https://gallery-oss.jasonz.yt/img/2025厦门&上海/{photo}-{size}.jpg",
       "photos": [
         "DSC01870",
         "DSC01878-已增强-NR",

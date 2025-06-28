@@ -24,9 +24,9 @@ export default defineNuxtConfig({
   vite: {
     plugins: [tailwindcss()],
   },
-  nitro: {
-    routeRules: {
-      "/oss/**": { proxy: "https://gallery-oss.jasonz.yt/**", cors: true },
-    },
-  },
+  // nitro: {
+  //   routeRules: {
+  //     "/oss/**": { proxy: "https://gallery-oss.jasonz.yt/**", cors: true },
+  //   },
+  // },
 });
