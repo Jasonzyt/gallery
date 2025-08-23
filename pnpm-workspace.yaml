@@ -1,0 +1,9 @@
+supportedArchitectures:
+  os:
+    - linux
+    - current
+  cpu:
+    - x64
+
+onlyBuiltDependencies:
+  - better-sqlite3
