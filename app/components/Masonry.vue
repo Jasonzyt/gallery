@@ -1,15 +1,30 @@
 <template>
   <div class="w-full flex flex-wrap gap-4">
-    <Photo v-for="(img, index) in displayImages" :src="img" :alt="img" class="item hover:shadow-xl transition-shadow"
-      @click="$emit('click', img, index)" />
-    <Loading :visible="isLoading" class="w-full mt-8" type="wave" :overlay="false" :fullscreen="false" />
+    <Photo
+      v-for="(img, index) in displayImages"
+      :src="img"
+      :alt="img"
+      class="item hover:shadow-xl transition-shadow"
+      @click="$emit('click', img, index)"
+    />
+    <Loading
+      :visible="isLoading"
+      class="w-full mt-8"
+      type="wave"
+      :overlay="false"
+      :fullscreen="false"
+    />
     <!-- 用于触发加载更多的不可见标记元素 -->
     <div ref="loadMoreTrigger" class="w-full h-1 bottom-0 opacity-0"></div>
   </div>
 
   <!-- 底部结束提示 -->
-  <USeparator v-if="hasReachedEnd" class="w-full px-4 text-center" :ui="{ container: 'text-gray-500' }"
-    :label="endText" />
+  <USeparator
+    v-if="hasReachedEnd"
+    class="w-full px-4 text-center"
+    :ui="{ container: 'text-gray-500' }"
+    :label="endText"
+  />
 </template>
 
 <script lang="ts">
@@ -29,38 +44,37 @@ const calcHeight = (x: number = 0.15) => {
 const props = defineProps({
   height: {
     type: String,
-    default: () => calcHeight(0.15)
   },
   maxWidth: {
     type: String,
-    default: "50%"
+    default: "50%",
   },
   list: {
     type: Array as PropType<string[]>,
-    default: () => []
+    default: () => [],
   },
   loadMoreThreshold: {
     type: Number,
-    default: window.innerHeight * 0.2
   },
   endText: {
     type: String,
-    default: "到底了~"
+    default: "到底了~",
   },
   // expose
   onLoadMore: {
     type: Function,
-    default: null
-  }
+    default: null,
+  },
 });
 
 const emit = defineEmits(["click", "loadMore"]);
 
 const isLoading = ref(false);
-const currentHeight = ref<string>(props.height);
+const currentHeight = ref(props.height);
 const loadMoreTrigger = ref<HTMLElement | null>(null);
 const hasReachedEnd = ref(false);
 const observer = ref<IntersectionObserver | null>(null);
+const loadMoreThreshold = ref(props.loadMoreThreshold);
 
 const displayImages = ref<string[]>([]);
 
@@ -71,16 +85,16 @@ const appendImages = (newImages: string[] | undefined) => {
     return displayImages.value;
   }
 
-  isLoading.value = true
+  isLoading.value = true;
   let loadCount = 0;
   newImages.forEach(async (img) => {
     loadImage(img).finally(() => {
-      loadCount++
+      loadCount++;
       if (loadCount === newImages.length) {
         displayImages.value.push(...newImages);
         isLoading.value = false;
       }
-    })
+    });
   });
 
   // return displayImages.value;
@@ -99,26 +113,29 @@ const getCurrentImages = (): string[] => {
 
 const setEndReached = (value: boolean) => {
   hasReachedEnd.value = value;
-}
+};
 
 // 设置交叉观察器
 const setupObserver = () => {
   if (!loadMoreTrigger.value) return;
 
   // 创建Observer实例
-  observer.value = new IntersectionObserver((entries) => {
-    const entry = entries[0];
-    // console.log('entry', entry);
-    if (entry.isIntersecting) {
-      triggerLoadMore();
+  observer.value = new IntersectionObserver(
+    (entries) => {
+      const entry = entries[0];
+      // console.log('entry', entry);
+      if (entry?.isIntersecting) {
+        triggerLoadMore();
+      }
+    },
+    {
+      // 设置根元素为视口
+      root: null,
+      // 提前触发的距离
+      rootMargin: `0px 0px ${loadMoreThreshold.value ?? "200"}px 0px`,
+      threshold: 0,
     }
-  }, {
-    // 设置根元素为视口
-    root: null,
-    // 提前触发的距离
-    rootMargin: `0px 0px ${props.loadMoreThreshold}px 0px`,
-    threshold: 0
-  });
+  );
 
   // 开始观察元素
   observer.value.observe(loadMoreTrigger.value);
@@ -135,7 +152,7 @@ const cleanupObserver = () => {
 // 触发加载更多事件
 const triggerLoadMore = () => {
   if (props.onLoadMore) {
-    emit('loadMore');
+    emit("loadMore");
   } else if (props.list) {
     const startIndex = displayImages.value.length;
     let endIndex = startIndex + 20 - 1; // 每次加载20张图片
@@ -153,13 +170,16 @@ const triggerLoadMore = () => {
   }
 };
 
-
 // 组件挂载后初始化
 onMounted(async () => {
-  setupObserver();
+  if (loadMoreThreshold.value === undefined) {
+    loadMoreThreshold.value = window.innerHeight * 0.2; // 默认阈值
+  }
+  currentHeight.value = calcHeight();
   window.onresize = () => {
     currentHeight.value = calcHeight();
   };
+  setupObserver();
 });
 
 // 组件卸载前清理
@@ -172,7 +192,7 @@ defineExpose({
   appendImages,
   resetImages,
   getCurrentImages,
-  setEndReached
+  setEndReached,
 });
 </script>
 <style scoped>
