@@ -8,9 +8,9 @@ from PIL.ExifTags import TAGS, GPSTAGS
 from typing import Dict, List, Any, Optional
 
 CWD = Path.cwd()
-METADATA_FILE = CWD / "src/utils/meta.json"
-IMPORT_DIR = CWD / "src/public/assets/import-albums"
-ALBUMS_DIR = CWD / "src/public/assets/albums"
+METADATA_FILE = CWD / "app/utils/meta.json"
+IMPORT_DIR = CWD / "public/assets/import-albums"
+ALBUMS_DIR = CWD / "public/assets/albums"
 
 METADATA = {"albums": []}
 
@@ -38,14 +38,7 @@ def filter_exif(
     if exif is None:
         return None
 
-    # 确保我们处理的是字典
-    if not isinstance(exif, dict):
-        try:
-            exif_dict = dict(exif)
-        except (TypeError, ValueError):
-            return None
-    else:
-        exif_dict = exif
+    exif_dict = exif
 
     # 创建标签ID和名称的映射
     tag_id_to_name = {v: k for k, v in TAGS.items()}

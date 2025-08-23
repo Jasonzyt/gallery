@@ -4,7 +4,6 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineNuxtConfig({
   compatibilityDate: "2024-11-01",
   devtools: { enabled: true },
-  srcDir: "src/",
   ssr: false,
   css: ["~/assets/css/main.css"],
   modules: ["@nuxt/ui", "@nuxt/icon", "@nuxt/image"],
@@ -17,7 +16,7 @@ export default defineNuxtConfig({
     customCollections: [
       {
         prefix: "my",
-        dir: "./src/assets/icon/my",
+        dir: "./app/assets/icon/my",
       },
     ],
   },
