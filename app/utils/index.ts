@@ -1,5 +1,4 @@
 import type { Collections } from "@nuxt/content";
-import { findAlbums } from "./fs";
 
 export type Album = {
   id: string;
@@ -20,10 +19,6 @@ export type Photo = {
 
   url?: string; // Optional, can be used to store the formatted URL
 };
-
-export function getAlbumIds() {
-  return findAlbums();
-}
 
 export async function getAlbums() {
   const { data } = await useAsyncData("albumsMeta", () => {
@@ -86,11 +81,20 @@ export function formatUrlWithSize(
   return url?.replace("{size}", size);
 }
 
-export async function getAllPhotosWithUrls(limit: number = 100, size: string = "{size}") {
+export async function getAllPhotosWithUrls(albums: Album[], limit: number = 100, size: string = "{size}") {
   const allPhotos: Photo[] = [];
-  const albums = await getAlbums();
-  albums.forEach(async (album) => {
-    const albumPhotos = await queryCollection(album.id as keyof Collections).all() as Photo[];
+  const { data } = await useAsyncData(async () => {
+    const queries: Promise<Photo[]>[] = [];
+    for (const album of albums) {
+      queries.push(queryCollection(album.id as keyof Collections).all() as Promise<Photo[]>);
+    }
+    return Promise.all(queries);
+  });
+  const photos = data.value as Photo[][];
+  for (let i = 0; i < photos.length && allPhotos.length < limit; i++) {
+    const albumPhotos = photos[i] || [];
+    const album = albums[i];
+    if (!album) { continue; }
     albumPhotos.forEach((photo) => {
       photo.url = formatUrlWithSize(album.urlFormat.replace("{photo}", photo.photo), size);
     });
@@ -101,8 +105,7 @@ export async function getAllPhotosWithUrls(limit: number = 100, size: string = "
       allPhotos.push(...albumPhotos);
       limit -= albumPhotos.length;
     }
-  });
-  console.log("getAllPhotosWithUrls", allPhotos);
+  }
   return allPhotos;
 }
 

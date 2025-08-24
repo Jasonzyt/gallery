@@ -10,7 +10,7 @@
 
 <script lang="ts" setup>
 const showViewer = ref(false);
-const photos = await getAllPhotosWithUrls();
+const photos = await getAllPhotosWithUrls(await getAlbums());
 const viewerRef = useTemplateRef("viewer");
 const handleClick = (_img: string, index: number) => {
   showViewer.value = true;
