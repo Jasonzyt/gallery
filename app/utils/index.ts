@@ -29,7 +29,7 @@ export async function getAlbums() {
 }
 
 export async function getAlbum(id: string) {
-  const { data } = await useAsyncData(() => {
+  const { data } = await useAsyncData(id, () => {
     return queryCollection("albumsMeta").where("id", "=", id).first();
   });
   console.log("getAlbum", data.value);
@@ -37,24 +37,17 @@ export async function getAlbum(id: string) {
 }
 
 export async function getAlbumPhotos(albumid: string) {
-  const { data } = await useAsyncData(() => {
-    return queryCollection(albumid as keyof Collections).all();
+  const { data } = await useAsyncData(albumid, () => {
+    return queryCollection(albumid as keyof Collections).all() as Promise<Photo[]>;
   });
-  console.log("getAlbumPhotos", data.value);
   return data.value as Photo[];
 }
 
 export async function getAlbumPhotosWithUrls(
-  albumid: string,
+  album: Album,
   size: string = "{size}"
 ) {
-  const { data } = await useAsyncData(() => {
-    const album = queryCollection("albumsMeta").where("id", "=", albumid).first()
-    const photos = queryCollection(albumid as keyof Collections).all()
-    return Promise.all([album, photos]);
-  });
-  const photos = data.value?.[1] as Photo[];
-  const album = data.value?.[0] as Album | undefined;
+  const photos = await getAlbumPhotos(album.id);
   return photos.map((photo) => {
     return {
       ...photo,

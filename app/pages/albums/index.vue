@@ -6,9 +6,7 @@
       :to="`/albums/${album.id}`"
     >
       <Album
-        :title="album.name"
-        :description="album.description"
-        :preview-photos="getAlbumPhotoUrls(album, 'sq').slice(0, 20)"
+        :album="album"
         class="shadow-md hover:shadow-xl transition-shadow"
       />
     </NuxtLink>
@@ -16,7 +14,7 @@
 </template>
 
 <script lang="ts" setup>
-const albums = getAlbums();
+const albums = await getAlbums();
 </script>
 
 <style></style>
