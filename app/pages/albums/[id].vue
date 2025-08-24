@@ -1,11 +1,17 @@
 <template>
   <div class="w-full p-4">
     <div class="p-4 text-center">
-      <img :src="coverImage" alt="Album Cover" class="inline-block w-full h-[30vh] object-cover rounded-xl mb-8" />
+      <img
+        :src="coverImage"
+        alt="Album Cover"
+        class="inline-block w-full h-[30vh] object-cover rounded-xl mb-8"
+      />
     </div>
     <div class="flex flex-col items-center justify-center mb-8">
       <h1 class="text-2xl font-bold mb-2">{{ album.name }}</h1>
-      <p class="text-gray-600">{{ album.desc }} - {{ photoCount }} photos</p>
+      <p class="text-gray-600">
+        {{ album.description }} - {{ photoCount }} photos
+      </p>
     </div>
     <div class="p-4 max-sm:hidden">
       <Masonry ref="masonry" :list="smPhotos" @click="handleClick" />
@@ -18,38 +24,41 @@
 </template>
 
 <script lang="ts" setup>
-const route = useRoute()
-const id = ref("")
+const route = useRoute();
+const id = ref("");
 if (Array.isArray(route.params.id)) {
-  id.value = route.params.id.join("")
+  id.value = route.params.id.join("");
 } else {
-  id.value = route.params.id
+  id.value = route.params.id;
 }
-const album = getAlbum(id.value)
+const album = getAlbum(id.value);
 if (!album) {
   throw createError({
     statusCode: 404,
     statusMessage: "Album not found",
-  })
+  });
 }
-const photos = getAlbumPhotoUrls(album)
-const smPhotos = formatUrlsWithSize(photos, 'sm')
-const lgPhotos = formatUrlsWithSize(photos, 'lg')
-const photoCount = ref(photos.length)
-const coverImage = ref('')
+const photos = getAlbumPhotoUrls(album);
+const smPhotos = formatUrlsWithSize(photos, "sm");
+const lgPhotos = formatUrlsWithSize(photos, "lg");
+const photoCount = ref(photos.length);
+const coverImage = ref("");
 if (!album.cover) {
-  coverImage.value = formatUrlWithSize(photos[Math.floor(Math.random() * photos.length)], 'lg')
+  coverImage.value = formatUrlWithSize(
+    photos[Math.floor(Math.random() * photos.length)],
+    "lg"
+  );
 } else {
-  coverImage.value = album.cover
+  coverImage.value = album.cover;
 }
 
-const showViewer = ref(false)
-const viewerRef = useTemplateRef('viewer')
+const showViewer = ref(false);
+const viewerRef = useTemplateRef("viewer");
 
 const handleClick = (img: string, index: number) => {
-  showViewer.value = true
-  viewerRef.value?.setPhotoIndex(index)
-}
+  showViewer.value = true;
+  viewerRef.value?.setPhotoIndex(index);
+};
 </script>
 
 <style></style>

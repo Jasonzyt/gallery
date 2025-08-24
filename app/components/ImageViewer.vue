@@ -16,12 +16,12 @@
       >
         <Transition name="slide" mode="out-in">
           <div
-            :key="currentImageSrc"
+            :key="currentPhoto?.url"
             class="flex items-center justify-center w-full h-full"
           >
             <img
-              v-if="currentImageSrc"
-              :src="currentImageSrc"
+              v-if="currentPhoto"
+              :src="formatUrlWithSize(currentPhoto.url, 'lg')"
               class="max-w-full max-h-screen object-contain"
               @load="isLoading = false"
             />
@@ -124,7 +124,10 @@
         </div>
 
         <div class="hidden">
-          <img v-if="preloadSrc" :src="preloadSrc" />
+          <img
+            v-if="preloadSrc"
+            :src="formatUrlWithSize(preloadSrc.url, 'lg')"
+          />
         </div>
       </div>
     </div>
@@ -144,12 +147,11 @@ const props = defineProps({
       typeof value() === "string" || typeof value() === "undefined",
   },
   photoList: {
-    type: Array as () => string[],
+    type: Array as () => Photo[],
     default: () => [],
   },
-  initialImageSrc: {
-    type: String,
-    default: "",
+  initialPhoto: {
+    type: Object as () => Photo,
   },
 });
 
@@ -158,16 +160,14 @@ const show = defineModel<boolean>();
 const emit = defineEmits(["update:modelValue"]);
 
 // 状态管理
-const preloadSrc = ref("");
+const preloadSrc = ref<Photo>();
 const isLoading = ref(true);
 const showInfoTrigger = ref(false); // 控制Info图标显示 (非触屏)
 const showInfo = ref(false); // 控制信息面板显示
 const mouseY = ref(0);
 const currentIndex = ref(0);
-const currentImageSrc = ref(
-  props.initialImageSrc.length === 0
-    ? props.photoList[currentIndex.value]
-    : props.initialImageSrc
+const currentPhoto = ref(
+  props.initialPhoto ? props.initialPhoto : props.photoList[currentIndex.value]
 );
 const hasPrevious = ref<boolean>(getPreviousPhoto() != undefined);
 const hasNext = ref<boolean>(getNextPhoto() != undefined);
@@ -188,7 +188,7 @@ const swipeThresholdY = 50; // 触发 *垂直* 滑动的最小距离 (像素) - 
 const swipeThresholdX = 75; // 触发 *水平* 滑动的最小距离 (像素) - 用于切换图片
 const isSwiping = ref(false); // 标记是否正在进行滑动操作
 
-function getNextPhoto(index: number = currentIndex.value): string | undefined {
+function getNextPhoto(index: number = currentIndex.value): Photo | undefined {
   if (props.nextPhoto) {
     return props.nextPhoto(index);
   }
@@ -197,7 +197,7 @@ function getNextPhoto(index: number = currentIndex.value): string | undefined {
 
 function getPreviousPhoto(
   index: number = currentIndex.value
-): string | undefined {
+): Photo | undefined {
   if (props.previousPhoto) {
     return props.previousPhoto(index);
   }
@@ -366,7 +366,7 @@ const prevImage = () => {
   isLoading.value = true; // 切换时显示加载状态
   const prevSrc = getPreviousPhoto(currentIndex.value);
   if (prevSrc) {
-    currentImageSrc.value = prevSrc;
+    currentPhoto.value = prevSrc;
     currentIndex.value--;
     updateNavState();
     preloadNextImage();
@@ -382,7 +382,7 @@ const nextImage = () => {
   isLoading.value = true; // 切换时显示加载状态
   const nextSrc = getNextPhoto(currentIndex.value);
   if (nextSrc) {
-    currentImageSrc.value = nextSrc;
+    currentPhoto.value = nextSrc;
     currentIndex.value++;
     updateNavState();
     preloadNextImage();
@@ -398,7 +398,7 @@ const preloadNextImage = () => {
   if (nextSrc) {
     preloadSrc.value = nextSrc;
   } else {
-    preloadSrc.value = ""; // 如果没有下一张，清空预加载
+    preloadSrc.value = undefined; // 如果没有下一张，清空预加载
   }
 };
 
@@ -418,7 +418,7 @@ const closeViewer = () => {
 const updateNavState = async () => {
   // console.log('Updating navigation state...', currentIndex.value, currentImageSrc.value);
   try {
-    exifData.value = await parseExifCategories(currentImageSrc.value ?? "");
+    // exifData.value = await parseExifCategories(currentPhoto.value ?? );
   } catch (error) {
     console.error("Error parsing EXIF data:", error);
     exifData.value = { 错误: { 信息: "无法加载图片数据" } };
@@ -477,13 +477,13 @@ watch(
       nextTick(refocusViewer); // 获取焦点
     } else if (!newVal) {
       bodyScrollLocked.value = false; // 锁定 body 滚动
-      preloadSrc.value = ""; // 清空预加载
+      preloadSrc.value = undefined; // 清空预加载
     }
   }
 );
 
 // 监听图片源变化，确保加载状态正确并关闭Info
-watch(currentImageSrc, (newSrc, oldSrc) => {
+watch(currentPhoto, (newSrc, oldSrc) => {
   if (newSrc !== oldSrc && show.value) {
     // 只有在 viewer 显示时才响应图片切换
     isLoading.value = true; // 图片源变化时，设置加载中
@@ -495,7 +495,7 @@ watch(currentImageSrc, (newSrc, oldSrc) => {
 const setPhotoIndex = (index: number) => {
   if (index < 0 || index >= props.photoList.length) return;
   currentIndex.value = index;
-  currentImageSrc.value = props.photoList[index];
+  currentPhoto.value = props.photoList[index];
   updateNavState();
   preloadNextImage();
   nextTick(refocusViewer);
@@ -507,7 +507,7 @@ defineExpose({
   closeViewer,
   toggleInfo,
   isLoading,
-  currentImageSrc,
+  currentImageSrc: currentPhoto,
   currentIndex,
   hasPrevious,
   hasNext,

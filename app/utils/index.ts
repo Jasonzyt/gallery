@@ -1,66 +1,109 @@
-import meta from "./meta.json";
+import type { Collections } from "@nuxt/content";
+import { findAlbums } from "./fs";
 
 export type Album = {
   id: string;
   name: string;
-  desc: string;
-  cover: string | null;
+  description: string;
+  cover: string | undefined;
+  updated: string;
   urlFormat: string;
-  photos: string[];
+  // photos: string[];
 };
 
-export function getAlbums(): Album[] {
-  return meta.albums;
+export type Photo = {
+  photo: string;
+  title?: string;
+  description?: string;
+  tags?: string;
+  extra?: string;
+
+  url?: string; // Optional, can be used to store the formatted URL
+};
+
+export function getAlbumIds() {
+  return findAlbums();
 }
 
-export function getAlbum(id: string): Album | undefined {
-  return meta.albums.filter((it) => it.id === id).at(0);
+export async function getAlbums() {
+  const { data } = await useAsyncData("albumsMeta", () => {
+    return queryCollection("albumsMeta").order("updated", "DESC").all();
+  });
+  console.log("getAlbums", data.value);
+  return data.value as Album[];
 }
 
-export function formatUrlsWithSize(urls: string[], size: string): string[] {
-  return urls.map((it) => formatUrlWithSize(it, size));
+export async function getAlbum(id: string) {
+  const { data } = await useAsyncData(() => {
+    return queryCollection("albumsMeta").where("id", "=", id).first();
+  });
+  console.log("getAlbum", data.value);
+  return data.value as Album | undefined;
 }
 
-export function formatUrlWithSize(url: string, size: string): string {
-  return url.replace("{size}", size);
+export async function getAlbumPhotos(albumid: string) {
+  const { data } = await useAsyncData(() => {
+    return queryCollection(albumid as keyof Collections).all();
+  });
+  console.log("getAlbumPhotos", data.value);
+  return data.value as Photo[];
 }
 
-export function getAlbumPhotoUrls(
-  album: Album,
+export async function getAlbumPhotosWithUrls(
+  albumid: string,
   size: string = "{size}"
-): string[] {
-  return album.photos.map((it) =>
-    album.urlFormat.replace("{photo}", it).replace("{size}", size)
-  );
-}
-
-export function getAllPhotoUrls(size: string = "{size}"): string[] {
-  const result: string[] = [];
-  meta.albums.forEach((album) =>
-    result.push(...getAlbumPhotoUrls(album, size))
-  );
-  return result;
-}
-
-// TODO: find a better way to reverse-find the album name
-export function findAlbumsByPhotoUrl(url: string): Album[] | undefined {
-  const filename = url.replace("\\", "/").split("/").pop()?.split("?")[0];
-  if (!filename) return undefined;
-  const basename = filename.split(".").slice(0, -1).join(".");
-  return meta.albums.filter((album) => {
-    return album.photos.some((photo) => {
-      return basename.indexOf(photo) !== -1;
-    });
+) {
+  const { data } = await useAsyncData(() => {
+    const album = queryCollection("albumsMeta").where("id", "=", albumid).first()
+    const photos = queryCollection(albumid as keyof Collections).all()
+    return Promise.all([album, photos]);
+  });
+  const photos = data.value?.[1] as Photo[];
+  const album = data.value?.[0] as Album | undefined;
+  return photos.map((photo) => {
+    return {
+      ...photo,
+      url: formatUrlWithSize(
+        album?.urlFormat.replace("{photo}", photo.photo),
+        size
+      ),
+    };
   });
 }
 
-export function shuffle<T>(array: T[]): T[] {
-  const result = array.slice();
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
-  }
-  return result;
+export function formatUrlsWithSizeSafe(urls: string[], size: string): string[] {
+  return urls.map((it) => formatUrlWithSizeSafe(it, size));
+}
+
+export function formatUrlWithSizeSafe(url: string, size: string): string {
+  return url.replace("{size}", size);
+}
+
+export function formatUrlWithSize(
+  url: string | undefined,
+  size: string
+): string | undefined {
+  return url?.replace("{size}", size);
+}
+
+export async function getAllPhotosWithUrls(limit: number = 100, size: string = "{size}") {
+  const allPhotos: Photo[] = [];
+  const albums = await getAlbums();
+  albums.forEach(async (album) => {
+    const albumPhotos = await queryCollection(album.id as keyof Collections).all() as Photo[];
+    albumPhotos.forEach((photo) => {
+      photo.url = formatUrlWithSize(album.urlFormat.replace("{photo}", photo.photo), size);
+    });
+    if (limit - allPhotos.length < 0) {
+      allPhotos.push(...albumPhotos.slice(0, limit - allPhotos.length));
+    }
+    else {
+      allPhotos.push(...albumPhotos);
+      limit -= albumPhotos.length;
+    }
+  });
+  console.log("getAllPhotosWithUrls", allPhotos);
+  return allPhotos;
 }
 
 export async function loadImage(url: string): Promise<HTMLImageElement> {

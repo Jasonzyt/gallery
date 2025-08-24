@@ -1,11 +1,11 @@
 <template>
   <div class="w-full flex flex-wrap gap-4">
     <Photo
-      v-for="(img, index) in displayImages"
-      :src="img"
-      :alt="img"
+      v-for="(photo, index) in displayImages"
+      :photo="photo"
+      size="sm"
       class="item hover:shadow-xl transition-shadow"
-      @click="$emit('click', img, index)"
+      @click="$emit('click', photo)"
     />
     <Loading
       :visible="isLoading"
@@ -50,7 +50,7 @@ const props = defineProps({
     default: "50%",
   },
   list: {
-    type: Array as PropType<string[]>,
+    type: Array as PropType<Photo[]>,
     default: () => [],
   },
   loadMoreThreshold: {
@@ -76,10 +76,10 @@ const hasReachedEnd = ref(false);
 const observer = ref<IntersectionObserver | null>(null);
 const loadMoreThreshold = ref(props.loadMoreThreshold);
 
-const displayImages = ref<string[]>([]);
+const displayImages = ref<Photo[]>([]);
 
 // 添加新图片到现有的图片集合中
-const appendImages = (newImages: string[] | undefined) => {
+const appendImages = (newImages: Photo[] | undefined) => {
   if (!newImages || newImages.length === 0) {
     hasReachedEnd.value = true;
     return displayImages.value;
@@ -88,7 +88,7 @@ const appendImages = (newImages: string[] | undefined) => {
   isLoading.value = true;
   let loadCount = 0;
   newImages.forEach(async (img) => {
-    loadImage(img).finally(() => {
+    loadImage(formatUrlWithSizeSafe(img.url ?? "", "sm")).finally(() => {
       loadCount++;
       if (loadCount === newImages.length) {
         displayImages.value.push(...newImages);
@@ -101,13 +101,13 @@ const appendImages = (newImages: string[] | undefined) => {
 };
 
 // 重置图片集合为新的图片数组
-const resetImages = (newImages: string[]) => {
+const resetImages = (newImages: Photo[]) => {
   displayImages.value = [...newImages];
   return displayImages.value;
 };
 
 // 获取当前显示的所有图片
-const getCurrentImages = (): string[] => {
+const getCurrentImages = () => {
   return [...displayImages.value];
 };
 

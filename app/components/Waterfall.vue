@@ -1,23 +1,50 @@
 <template>
   <div class="relative">
-    <div ref="masonryContainer" class="sm:hidden flex w-full" :style="`gap: ${gap}`">
+    <div
+      ref="masonryContainer"
+      class="sm:hidden flex w-full"
+      :style="`gap: ${gap}`"
+    >
       <!-- 动态生成多栏 -->
-      <div v-for="colIndex in columns" :key="colIndex" class="flex flex-col"
-        :style="`width: ${100 / columns}%; gap: ${gap}`" ref="columnsRef">
-        <Photo v-for="img in columnImages[colIndex - 1]" :key="img.src" :src="img.src" :alt="img.src"
+      <div
+        v-for="colIndex in columns"
+        :key="colIndex"
+        class="flex flex-col"
+        :style="`width: ${100 / columns}%; gap: ${gap}`"
+        ref="columnsRef"
+      >
+        <Photo
+          v-for="img in columnImages[colIndex - 1]"
+          :key="img.photo.url"
+          :photo="img.photo"
+          size="sm"
           :style="img.maxHeight ? `max-height: ${img.maxHeight}` : ''"
           class="w-full transition-shadow hover:shadow-xl cursor-pointer"
-          @click="$emit('click', img.src, img.originalIndex)" />
+          @click="$emit('click', img.photo, img.originalIndex)"
+        />
       </div>
 
       <!-- 用于触发加载更多的不可见标记元素 -->
-      <div ref="loadMoreTrigger" class="w-full h-1 absolute bottom-0 opacity-0"></div>
+      <div
+        ref="loadMoreTrigger"
+        class="w-full h-1 absolute bottom-0 opacity-0"
+      ></div>
     </div>
-    <Loading :visible="isLoading" class="w-full mt-16" type="wave" :overlay="false" :fullscreen="false" />
+    <Loading
+      :visible="isLoading"
+      class="w-full mt-16"
+      type="wave"
+      :overlay="false"
+      :fullscreen="false"
+    />
 
     <!-- 底部结束提示 -->
-    <USeparator v-if="hasReachedEnd" class="w-full px-2 py-4 text-center" :ui="{ container: 'text-gray-500' }"
-      :label="endText" />
+    <USeparator
+      v-if="hasReachedEnd"
+      class="w-full px-2 py-4 text-center"
+      :ui="{ container: 'text-gray-500' }"
+      :label="endText"
+    />
   </div>
 </template>
 
@@ -25,43 +52,43 @@
 const props = defineProps({
   columns: {
     type: Number,
-    default: 2
+    default: 2,
   },
   gap: {
     type: String,
-    default: "1rem"
+    default: "1rem",
   },
   maxHeight: {
     type: String,
-    default: ""
+    default: "",
   },
   list: {
-    type: Array as PropType<string[]>,
-    default: () => []
+    type: Array as PropType<Photo[]>,
+    default: () => [],
   },
   // 触发加载更多的距离阈值，默认为400px
   loadMoreThreshold: {
     type: Number,
-    default: 400
+    default: 400,
   },
   // 结束提示文本
   endText: {
     type: String,
-    default: "到底了~"
+    default: "到底了~",
   },
   // expose
   onLoadMore: {
     type: Function,
-    default: null
-  }
+    default: null,
+  },
 });
 
 const emit = defineEmits(["click", "loadMore"]);
 
 // 容器引用
-const masonryContainer = useTemplateRef('masonryContainer');
-const loadMoreTrigger = useTemplateRef('loadMoreTrigger');
-const columnsRef = useTemplateRef('columnsRef');
+const masonryContainer = useTemplateRef("masonryContainer");
+const loadMoreTrigger = useTemplateRef("loadMoreTrigger");
+const columnsRef = useTemplateRef("columnsRef");
 
 // 是否已到达底部
 const hasReachedEnd = ref(false);
@@ -70,7 +97,7 @@ const observer = ref<IntersectionObserver | null>(null);
 // 存储所有图片的数据，包括高度信息
 const imageData = reactive<{
   items: Array<{
-    src: string;
+    photo: Photo;
     width: number;
     height: number;
     loaded: boolean;
@@ -80,13 +107,17 @@ const imageData = reactive<{
 }>({ items: [] });
 
 // 每列图片
-const columnImages = ref<Array<Array<{
-  src: string;
-  originalIndex: number;
-  maxHeight?: string;
-}>>>(Array.from({ length: props.columns }, () => []));
+const columnImages = ref<
+  Array<
+    Array<{
+      photo: Photo;
+      originalIndex: number;
+      maxHeight?: string;
+    }>
+  >
+>(Array.from({ length: props.columns }, () => []));
 
-const columnWidth = ref(400)
+const columnWidth = ref(400);
 const columnGap = ref(16);
 // 每列的累积高度
 const columnHeights = ref<number[]>(Array(props.columns).fill(0));
@@ -99,7 +130,13 @@ const initializeColumns = () => {
   columnImages.value = Array.from({ length: props.columns }, () => []);
   columnHeights.value = Array(props.columns).fill(0);
   columnWidth.value = columnsRef.value?.at(0)?.clientWidth || 200;
-  columnGap.value = (columnsRef.value?.at(0)?.computedStyleMap()?.get("column-gap") as CSSUnitValue).value || 16;
+  columnGap.value =
+    (
+      columnsRef.value
+        ?.at(0)
+        ?.computedStyleMap()
+        ?.get("column-gap") as CSSUnitValue
+    ).value || 16;
 };
 
 // 更新布局
@@ -108,18 +145,22 @@ const updateLayout = () => {
   initializeColumns();
 
   // 按原始顺序排序图片
-  const sortedItems = [...imageData.items].sort((a, b) => a.originalIndex - b.originalIndex);
+  const sortedItems = [...imageData.items].sort(
+    (a, b) => a.originalIndex - b.originalIndex
+  );
 
   // 将图片分配到各列
-  sortedItems.forEach(item => {
+  sortedItems.forEach((item) => {
     // 找出当前高度最低的列
-    const minHeightIndex = columnHeights.value.indexOf(Math.min(...columnHeights.value));
+    const minHeightIndex = columnHeights.value.indexOf(
+      Math.min(...columnHeights.value)
+    );
 
     // 将图片添加到该列
-    columnImages.value[minHeightIndex].push({
-      src: item.src,
+    columnImages.value?.at(minHeightIndex)?.push({
+      photo: item.photo,
       originalIndex: item.originalIndex,
-      maxHeight: item.maxHeight
+      maxHeight: item.maxHeight,
     });
 
     const actualHeight = item.height * (columnWidth.value / item.width);
@@ -134,7 +175,7 @@ const updateLayout = () => {
 };
 
 // 添加新图片
-const appendImages = async (newImages: string[]) => {
+const appendImages = async (newImages: Photo[]) => {
   if (!Array.isArray(newImages) || newImages.length === 0) {
     hasReachedEnd.value = true;
     return;
@@ -142,7 +183,7 @@ const appendImages = async (newImages: string[]) => {
 
   // 如果正在加载，则等待加载完成
   if (isLoading.value) {
-    await new Promise<void>(resolve => {
+    await new Promise<void>((resolve) => {
       const interval = setInterval(() => {
         if (!isLoading.value) {
           clearInterval(interval);
@@ -158,36 +199,38 @@ const appendImages = async (newImages: string[]) => {
     const startIndex = imageData.items.length;
 
     // 创建新的图片项
-    const newItems = newImages.map((src, index) => ({
-      src,
+    const newItems = newImages.map((photo, index) => ({
+      photo,
       width: 0,
       height: 0,
       loaded: false,
       originalIndex: startIndex + index,
-      maxHeight: props.maxHeight || undefined
+      maxHeight: props.maxHeight || undefined,
     }));
 
     // 添加到现有数组
     imageData.items.push(...newItems);
 
     // 加载所有新图片
-    await Promise.all(newItems.map(item => {
-      return new Promise<void>((resolve) => {
-        const img = new Image();
-        img.onload = () => {
-          item.width = img.width;
-          item.height = img.height;
-          item.loaded = true;
-          resolve();
-        };
-        img.onerror = () => {
-          // item.height = 300; // 默认高度
-          item.loaded = true;
-          resolve();
-        };
-        img.src = item.src;
-      });
-    }));
+    await Promise.all(
+      newItems.map((item) => {
+        return new Promise<void>((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            item.width = img.width;
+            item.height = img.height;
+            item.loaded = true;
+            resolve();
+          };
+          img.onerror = () => {
+            // item.height = 300; // 默认高度
+            item.loaded = true;
+            resolve();
+          };
+          img.src = formatUrlWithSizeSafe(item.photo.url ?? "", "sm");
+        });
+      })
+    );
 
     // 更新布局
     updateLayout();
@@ -199,7 +242,7 @@ const appendImages = async (newImages: string[]) => {
 };
 
 // 重置图片
-const resetImages = async (images: string[] = []) => {
+const resetImages = async (images: Photo[] = []) => {
   // 重置结束状态
   hasReachedEnd.value = false;
   imageData.items = [];
@@ -209,7 +252,7 @@ const resetImages = async (images: string[] = []) => {
 
 // 获取当前所有图片
 const getCurrentImages = () => {
-  return imageData.items.map(item => item.src);
+  return imageData.items.map((item) => item.photo);
 };
 
 // 设置交叉观察器
@@ -217,19 +260,22 @@ const setupObserver = () => {
   if (!loadMoreTrigger.value) return;
 
   // 创建Observer实例
-  observer.value = new IntersectionObserver((entries) => {
-    const entry = entries[0];
-    // 当触发元素进入视口时
-    if (entry.isIntersecting && !isLoading.value && !hasReachedEnd.value) {
-      triggerLoadMore();
+  observer.value = new IntersectionObserver(
+    (entries) => {
+      const entry = entries[0];
+      // 当触发元素进入视口时
+      if (entry?.isIntersecting && !isLoading.value && !hasReachedEnd.value) {
+        triggerLoadMore();
+      }
+    },
+    {
+      // 设置根元素为视口
+      root: null,
+      // 提前触发的距离
+      rootMargin: `0px 0px ${props.loadMoreThreshold}px 0px`,
+      threshold: 0,
     }
-  }, {
-    // 设置根元素为视口
-    root: null,
-    // 提前触发的距离
-    rootMargin: `0px 0px ${props.loadMoreThreshold}px 0px`,
-    threshold: 0
-  });
+  );
 
   // 开始观察元素
   observer.value.observe(loadMoreTrigger.value);
@@ -248,7 +294,7 @@ const triggerLoadMore = () => {
   if (isLoading.value || hasReachedEnd.value) return;
 
   if (props.onLoadMore) {
-    emit('loadMore');
+    emit("loadMore");
   } else if (props.list) {
     const startIndex = imageData.items.length;
     let endIndex = startIndex + 20 - 1; // 每次加载20张图片
@@ -267,17 +313,23 @@ const triggerLoadMore = () => {
 };
 
 // 监听列数变化
-watch(() => props.columns, () => {
-  updateLayout();
-});
+watch(
+  () => props.columns,
+  () => {
+    updateLayout();
+  }
+);
 
 // 监听maxHeight变化
-watch(() => props.maxHeight, () => {
-  imageData.items.forEach(item => {
-    item.maxHeight = props.maxHeight || undefined;
-  });
-  updateLayout();
-});
+watch(
+  () => props.maxHeight,
+  () => {
+    imageData.items.forEach((item) => {
+      item.maxHeight = props.maxHeight || undefined;
+    });
+    updateLayout();
+  }
+);
 
 // 组件挂载后初始化
 onMounted(async () => {
@@ -300,6 +352,6 @@ defineExpose({
   appendImages,
   resetImages,
   getCurrentImages,
-  setEndReached
+  setEndReached,
 });
 </script>

@@ -22,6 +22,14 @@ export default defineNuxtConfig({
   vite: {
     plugins: [tailwindcss()],
   },
+  content: {
+    build: {
+      csv: {
+        delimiter: ";", // Use semicolon as delimiter
+        json: true,
+      },
+    },
+  },
   // nitro: {
   //   routeRules: {
   //     "/oss/**": { proxy: "https://gallery-oss.jasonz.yt/**", cors: true },
