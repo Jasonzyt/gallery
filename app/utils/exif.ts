@@ -65,7 +65,7 @@ export async function parseExifCategories(
 
   for (const category of categories) {
     result[category] = {};
-    for (const key of EXIF_CATEGORIES[category]) {
+    for (const key of EXIF_CATEGORIES[category] || []) {
       if (exif[key]) {
         result[category][key] = exif[key];
       }
@@ -78,11 +78,11 @@ export async function parseExifCategories(
   return result;
 }
 
-export async function stringifyCameraInfo(exifData: any) {
+export function stringifyCameraInfo(exifData: any) {
   return `${exifData.Make} ${exifData.Model} with ${exifData.LensModel}`;
 }
 
-export async function stringifyShootingInfo(exifData: any) {
+export function stringifyShootingInfo(exifData: any) {
   let shutterSpeed = "";
   if (exifData.ExposureTime > 1) {
     shutterSpeed = `${exifData.ExposureTime}"`;
@@ -90,4 +90,12 @@ export async function stringifyShootingInfo(exifData: any) {
     shutterSpeed = `1/${Math.round(1 / exifData.ExposureTime)}`;
   }
   return `${exifData.FocalLengthIn35mmFormat}mm ${shutterSpeed} f/${exifData.FNumber} ISO${exifData.ISO}`;
+}
+
+export function stringifyShutterSpeed(exifData: any) {
+  if (exifData.ExposureTime > 1) {
+    return `${exifData.ExposureTime}"`;
+  } else {
+    return `1/${Math.round(1 / exifData.ExposureTime)}`;
+  }
 }

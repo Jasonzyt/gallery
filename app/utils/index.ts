@@ -102,6 +102,16 @@ export async function getAllPhotosWithUrls(albums: Album[], limit: number = 100,
   return allPhotos;
 }
 
+export async function getPhoto(album: Album, photo: string) {
+  const { data } = await useAsyncData(`${album.id}-${photo}`, () => {
+    return queryCollection(album.id as keyof Collections)
+      .where("photo", "=", photo)
+      .first() as Promise<Photo | undefined>;
+  });
+  console.log("getPhoto", data.value);
+  return data.value as Photo | undefined;
+}
+
 export async function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
