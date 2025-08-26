@@ -1,5 +1,6 @@
 import os
 import json
+import csv
 import shutil
 import traceback
 from pathlib import Path
@@ -8,11 +9,15 @@ from PIL.ExifTags import TAGS, GPSTAGS
 from typing import Dict, List, Any, Optional
 
 CWD = Path.cwd()
-METADATA_FILE = CWD / "app/utils/meta.json"
+# METADATA_FILE = CWD / "app/utils/meta.json"
 IMPORT_DIR = CWD / "public/assets/import-albums"
 ALBUMS_DIR = CWD / "public/assets/albums"
 
-METADATA = {"albums": []}
+CONTENT_DIR = CWD / "content"
+CONTENT_META_FILE = CONTENT_DIR / "albums-meta.csv"
+
+ALBUMS_META: List[Dict[str, Any]] = []
+ALBUM_PHOTOS: Dict[str, List[Dict[str, Any]]] = {}
 
 SIZES = {
     "sm": {"max_width": 800, "quality": 80},
@@ -111,34 +116,106 @@ def check_dirs():
         IMPORT_DIR.mkdir(parents=True, exist_ok=True)
 
 
+# def load_metadata():
+#     if METADATA_FILE.exists():
+#         with open(METADATA_FILE, "r", encoding="utf-8") as f:
+#             return json.load(f)
+#     else:
+#         print(
+#             f"[METADATA] Metadata file {METADATA_FILE} does not exist. Creating new metadata file."
+#         )
+#         write_metadata()
+#     return METADATA
+
+
+# def write_metadata():
+#     with open(METADATA_FILE, "w", encoding="utf-8") as f:
+#         json.dump(METADATA, f, indent=2, ensure_ascii=False)
+
+
 def load_metadata():
-    if METADATA_FILE.exists():
-        with open(METADATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    else:
-        print(
-            f"[METADATA] Metadata file {METADATA_FILE} does not exist. Creating new metadata file."
-        )
-        write_metadata()
-    return METADATA
+    """
+    从 content/albums-meta.csv 和每个相册的 index.csv 加载元数据
+    """
+    global ALBUMS_META, ALBUM_PHOTOS
+    if CONTENT_META_FILE.exists():
+        with open(CONTENT_META_FILE, "r", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f, delimiter=";")
+            ALBUMS_META = [row for row in reader]
+
+    for album_data in ALBUMS_META:
+        album_id = album_data["id"]
+        photos_meta = []
+        photos_meta_file = CONTENT_DIR / album_id / "index.csv"
+        if photos_meta_file.exists():
+            with open(photos_meta_file, "r", encoding="utf-8", newline="") as pf:
+                photo_reader = csv.DictReader(pf, delimiter=";")
+                for photo_data in photo_reader:
+                    if "extra" in photo_data and photo_data["extra"]:
+                        try:
+                            photo_data["extra"] = json.loads(photo_data["extra"])
+                        except json.JSONDecodeError:
+                            photo_data["extra"] = {}
+                    else:
+                        photo_data["extra"] = {}
+                    photos_meta.append(photo_data)
+        ALBUM_PHOTOS[album_id] = photos_meta
 
 
 def write_metadata():
-    with open(METADATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(METADATA, f, indent=2, ensure_ascii=False)
+    """
+    将元数据写回 content/albums-meta.csv 和每个相册的 index.csv
+    """
+    # 写回相册元数据
+    if ALBUMS_META:
+        with open(CONTENT_META_FILE, "w", encoding="utf-8", newline="") as f:
+            album_headers = ALBUMS_META[0].keys()
+            writer = csv.DictWriter(f, fieldnames=album_headers, delimiter=";")
+            writer.writeheader()
+            writer.writerows(ALBUMS_META)
+
+    # 写回照片元数据
+    photo_headers = ["photo", "title", "description", "tags", "extra"]
+    for album_id, photos in ALBUM_PHOTOS.items():
+        album_dir = CONTENT_DIR / album_id
+        album_dir.mkdir(exist_ok=True)
+        photos_meta_file = album_dir / "index.csv"
+        with open(photos_meta_file, "w", encoding="utf-8", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=photo_headers, delimiter=";")
+            writer.writeheader()
+            for photo in photos:
+                photo_to_write = photo.copy()
+                photo_to_write["extra"] = json.dumps(
+                    photo_to_write.get("extra", {}), ensure_ascii=False
+                )
+                # Ensure all headers are present
+                for header in photo_headers:
+                    if header not in photo_to_write:
+                        photo_to_write[header] = ""
+                writer.writerow(photo_to_write)
 
 
 def create_new_album(name, photos):
-    METADATA["albums"].append(
+    ALBUMS_META.append(
         {
             "id": name,
             "name": name,
-            "desc": "",
-            "cover": None,
+            "description": "",
+            "cover": "",
+            "updated": "",
             "urlFormat": f"/assets/albums/{name}/{{photo}}-{{size}}.jpg",
-            "photos": photos,
         }
     )
+    ALBUM_PHOTOS[name] = [
+        {
+            "photo": p,
+            "title": "",
+            "description": "",
+            "tags": "",
+            "extra": {},
+        }
+        for p in photos
+    ]
 
 
 def process_image(img_path, id, album_name):
@@ -197,16 +274,25 @@ def import_album(dir_path):
             except Exception as e:
                 log_error("Error when processing image", e)
 
-    album_exists = next((a for a in METADATA["albums"] if a["id"] == album_name), None)
+    album_exists = next((a for a in ALBUMS_META if a["id"] == album_name), None)
     if album_exists:
         print("[METADATA] Album already exists, appending photos")
-        album_exists["photos"].extend(
-            p for p in photos if p not in album_exists["photos"]
-        )
+        existing_photo_ids = {p["photo"] for p in ALBUM_PHOTOS.get(album_name, [])}
+        for p_id in photos:
+            if p_id not in existing_photo_ids:
+                ALBUM_PHOTOS[album_name].append(
+                    {
+                        "photo": p_id,
+                        "title": "",
+                        "description": "",
+                        "tags": "",
+                        "extra": {},
+                    }
+                )
     else:
         create_new_album(album_name, photos)
         print(
-            f"[METADATA] Created new album {album_name}. Please add a cover photo and description in meta.json"
+            f"[METADATA] Created new album {album_name}. Please add a cover photo and description in {CONTENT_META_FILE}"
         )
 
     write_metadata()
@@ -214,10 +300,9 @@ def import_album(dir_path):
 
 
 def main():
-    global METADATA
     count = 0
     check_dirs()
-    METADATA = load_metadata()
+    load_metadata()
     with os.scandir(IMPORT_DIR) as entries:
         for entry in entries:
             if entry.is_dir():
