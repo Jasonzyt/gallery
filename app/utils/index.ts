@@ -38,8 +38,9 @@ export async function getAlbum(id: string) {
 
 export async function getAlbumPhotos(albumid: string) {
   const { data } = await useAsyncData(albumid, () => {
-    return queryCollection(albumid as keyof Collections).all() as Promise<Photo[]>;
+    return queryCollection(albumid as keyof Collections).all();
   });
+  console.log("getAlbumPhotos", data.value);
   return data.value as Photo[];
 }
 

@@ -7,18 +7,12 @@ import {
 import fs from "node:fs";
 import path from "node:path";
 
-function isDirectory(filePath: string): boolean {
-  if (!fs.existsSync(filePath)) {
-    return false;
-  }
-  return fs.statSync(filePath).isDirectory();
-}
-
 function findAlbums(): string[] {
   const albumsDir = path.resolve("content");
   return fs
     .readdirSync(albumsDir)
-    .filter((file) => isDirectory(path.join(albumsDir, file)));
+    .filter((file) => file.endsWith(".csv") && file !== "albums-meta.csv")
+    .map((file) => file.replace(".csv", ""));
 }
 
 function defineAlbumCollections(): Record<string, DefinedCollection> {
