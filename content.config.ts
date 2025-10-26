@@ -28,7 +28,7 @@ function defineAlbumCollections(): Record<string, DefinedCollection> {
   albums.forEach((album) => {
     result[album] = defineCollection({
       type: "data",
-      source: `${album}/**.csv`,
+      source: `${album}.csv`,
       schema: z.object({
         photo: z.string(),
         title: z.string().optional(),
